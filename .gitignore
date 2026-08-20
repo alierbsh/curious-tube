@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Paketleme ciktisi
+*.zip
+*.crx
+*.pem

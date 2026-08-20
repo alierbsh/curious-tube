@@ -1,0 +1,273 @@
+/* =====================================================================
+   YouTube Minimalist Search
+   YouTube'u bir arama motoruna indirger.
+   Gorunur kalanlar : arama cubugu + arama butonu + arama sonuclari + oynatici
+   Gizlenenler      : ana sayfa akisi, abonelikler, sol menu, oneriler,
+                      Shorts, yorumlar, reklamlar, promosyon balonlari
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   1) UST BAR (MASTHEAD) — sadece arama alani kalir
+   --------------------------------------------------------------------- */
+
+/* Sol taraf: hamburger menu butonu + YouTube logosu + ulke kodu */
+ytd-masthead #start.ytd-masthead,
+ytd-masthead #guide-button,
+ytd-masthead ytd-topbar-logo-renderer,
+#masthead #guide-button,
+#masthead ytd-topbar-logo-renderer {
+  display: none !important;
+}
+
+/* Sag taraf: olustur, bildirimler, avatar, "uygulamayi indir" vb. */
+ytd-masthead #end.ytd-masthead,
+ytd-masthead #buttons.ytd-masthead,
+#masthead #end,
+#masthead #buttons,
+ytd-masthead ytd-notification-topbar-button-renderer,
+ytd-masthead ytd-topbar-menu-button-renderer,
+ytd-masthead ytd-button-renderer#button,
+ytd-masthead #voice-search-button,
+ytd-masthead .ytSearchboxComponentVoiceSearchButton,
+ytd-masthead yt-icon-button#voice-search-button {
+  display: none !important;
+}
+
+/* Arama alanini ortala ve nefes alacak genislik ver */
+ytd-masthead #container.ytd-masthead,
+#masthead #container {
+  justify-content: center !important;
+}
+
+ytd-masthead #center.ytd-masthead,
+#masthead #center {
+  flex: 0 1 720px !important;
+  max-width: 720px !important;
+  min-width: 0 !important;
+  margin: 0 auto !important;
+  justify-content: center !important;
+}
+
+/* Arama kutusu ve arama butonu her kosulda gorunur kalsin
+   (asagidaki genel gizleme kurallarindan etkilenmemeleri icin) */
+ytd-searchbox,
+yt-searchbox,
+#search-form,
+#search-input,
+#search,
+#search-icon-legacy,
+.ytSearchboxComponentHost,
+.ytSearchboxComponentSearchButton {
+  display: revert !important;
+  visibility: visible !important;
+}
+
+/* Ust bardaki ince golgeyi/cizgiyi sadelestir */
+#masthead-container.ytd-app {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   2) SOL MENU (GUIDE) — tamamen kaldirilir, icerik sola yaslanir
+   --------------------------------------------------------------------- */
+
+ytd-app #guide,
+ytd-app tp-yt-app-drawer#guide,
+ytd-app #guide-wrapper,
+ytd-app #guide-content,
+ytd-app #guide-inner-content,
+ytd-mini-guide-renderer,
+ytd-guide-renderer,
+ytd-app tp-yt-app-drawer #contentContainer {
+  display: none !important;
+}
+
+tp-yt-app-drawer#guide {
+  --app-drawer-width: 0px !important;
+}
+
+/* Menunun birakti bogus bosluklari kapat */
+ytd-app #page-manager.ytd-app,
+ytd-page-manager#page-manager {
+  margin-left: 0 !important;
+}
+
+ytd-app ytd-mini-guide-renderer + #page-manager {
+  margin-left: 0 !important;
+}
+
+/* ---------------------------------------------------------------------
+   3) ANA SAYFA / ABONELIKLER / KESFET / TREND — komple bos sayfa
+   --------------------------------------------------------------------- */
+
+ytd-browse[page-subtype="home"],
+ytd-browse[page-subtype="subscriptions"],
+ytd-browse[page-subtype="trending"],
+ytd-browse[page-subtype="explore"],
+ytd-browse[page-subtype="channels"],
+ytd-browse[page-subtype="storefront"] {
+  display: none !important;
+}
+
+/* content.js engellenmis bir rota tespit ettiginde sayfayi tamamen bosaltir */
+html.ymin-blocked ytd-page-manager,
+html.ymin-blocked #page-manager,
+html.ymin-blocked ytd-browse,
+html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
+  display: none !important;
+}
+
+/* Bos sayfada gosterilen sade karsilama blogu (content.js olusturur) */
+#ymin-hero {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+  font-family: "Roboto", "Arial", sans-serif;
+  text-align: center;
+  z-index: 1;
+}
+
+#ymin-hero .ymin-hero-title {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  opacity: 0.85;
+}
+
+#ymin-hero .ymin-hero-sub {
+  font-size: 14px;
+  color: var(--yt-spec-text-secondary, #606060);
+  opacity: 0.7;
+}
+
+/* ---------------------------------------------------------------------
+   4) SHORTS — her yerde yok sayilir
+   --------------------------------------------------------------------- */
+
+ytd-reel-shelf-renderer,
+ytd-rich-shelf-renderer[is-shorts],
+ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+ytm-shorts-lockup-view-model,
+ytm-shorts-lockup-view-model-v2,
+ytd-shorts,
+ytd-video-renderer:has(a[href^="/shorts/"]),
+ytd-grid-video-renderer:has(a[href^="/shorts/"]),
+ytd-rich-item-renderer:has(a[href^="/shorts/"]),
+ytd-compact-video-renderer:has(a[href^="/shorts/"]),
+yt-chip-cloud-chip-renderer:has([title="Shorts"]),
+a[href^="/shorts/"] {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   5) IZLEME SAYFASI — video kalir, cevresindeki her sey gider
+   --------------------------------------------------------------------- */
+
+/* Sagdaki "Siradaki" / onerilen videolar sutunu */
+#secondary.ytd-watch-flexy,
+#secondary-inner.ytd-watch-flexy,
+#related.ytd-watch-flexy,
+ytd-watch-next-secondary-results-renderer,
+ytd-compact-video-renderer,
+ytd-compact-radio-renderer,
+ytd-compact-playlist-renderer,
+ytd-item-section-renderer.ytd-watch-next-secondary-results-renderer {
+  display: none !important;
+}
+
+/* Yorumlar, urun rafi, bilet rafi, bagis kutusu, konu etiketleri */
+ytd-comments#comments,
+#comments.ytd-watch-flexy,
+ytd-merch-shelf-renderer,
+ytd-ticket-shelf-renderer,
+ytd-donation-shelf-renderer,
+ytd-video-description-music-section-renderer,
+ytd-video-description-transcript-section-renderer,
+#chips.ytd-watch-flexy,
+#clarify-box.ytd-watch-flexy,
+ytd-info-panel-container-renderer {
+  display: none !important;
+}
+
+/* Oynatici uzerindeki bitis ekrani kartlari, duraklatma reklami, oneri baloncuklari */
+.ytp-endscreen-content,
+.html5-endscreen,
+.ytp-videowall-still,
+.ytp-ce-element,
+.ytp-ce-covering-overlay,
+.ytp-cards-teaser,
+.ytp-cards-button,
+.ytp-pause-overlay,
+.ytp-pause-overlay-container,
+.ytp-suggested-action,
+.ytp-suggested-action-badge,
+.iv-branding,
+.annotation {
+  display: none !important;
+}
+
+/* Sag sutun gidince video sutununu ortala */
+ytd-watch-flexy #primary.ytd-watch-flexy,
+ytd-watch-flexy #primary-inner.ytd-watch-flexy {
+  max-width: none !important;
+}
+
+ytd-watch-flexy #columns.ytd-watch-flexy {
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+}
+
+/* ---------------------------------------------------------------------
+   6) ARAMA SONUCLARI — sadece gercek sonuclar; raflar ve reklamlar gider
+   --------------------------------------------------------------------- */
+
+ytd-search ytd-shelf-renderer,
+ytd-search ytd-horizontal-card-list-renderer,
+ytd-search ytd-universal-watch-card-renderer,
+ytd-search-pyv-renderer,
+ytd-promoted-sparkles-web-renderer,
+ytd-promoted-sparkles-text-search-renderer,
+ytd-promoted-video-renderer,
+ytd-carousel-ad-renderer {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   7) REKLAMLAR VE PROMOSYONLAR — genel temizlik
+   --------------------------------------------------------------------- */
+
+ytd-ad-slot-renderer,
+ytd-in-feed-ad-layout-renderer,
+ytd-banner-promo-renderer,
+ytd-statement-banner-renderer,
+ytd-mealbar-promo-renderer,
+ytd-popup-container tp-yt-paper-dialog:has(ytd-mealbar-promo-renderer),
+yt-mealbar-promo-renderer,
+#player-ads,
+#masthead-ad,
+#offer-module,
+ytd-brand-video-shelf-renderer,
+ytd-brand-video-singleton-renderer,
+tp-yt-iron-overlay-backdrop[opened] {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   8) MOBIL (m.youtube.com) — temel sadelestirme
+   --------------------------------------------------------------------- */
+
+ytm-pivot-bar-renderer,
+.pivot-bar-container,
+ytm-rich-grid-renderer,
+ytm-companion-slot,
+ytm-item-section-renderer:has(ytm-shorts-lockup-view-model),
+ytm-watch-next-secondary-results-renderer,
+ytm-comments-entry-point-header-renderer {
+  display: none !important;
+}
