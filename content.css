@@ -51,8 +51,11 @@ ytd-masthead #center.ytd-masthead,
   justify-content: center !important;
 }
 
-/* Arama kutusu ve arama butonu her kosulda gorunur kalsin
-   (asagidaki genel gizleme kurallarindan etkilenmemeleri icin) */
+/* Arama kutusu ve arama butonu her kosulda gorunur kalsin.
+   NOT: burada eskiden "display: revert !important" vardi; revert, YouTube'un
+   kendi author stilini de geri aldigi icin ozel elemanlari inline'a
+   dusurebiliyordu. Gizleme secicileri artik arama kutusuna hic dokunmadigi
+   icin display'i zorlamiyoruz, sadece gorunurlugu garantiliyoruz. */
 ytd-searchbox,
 yt-searchbox,
 #search-form,
@@ -61,40 +64,42 @@ yt-searchbox,
 #search-icon-legacy,
 .ytSearchboxComponentHost,
 .ytSearchboxComponentSearchButton {
-  display: revert !important;
   visibility: visible !important;
 }
 
-/* Ust bardaki ince golgeyi/cizgiyi sadelestir.
-   transition burada tanimli: bos sayfadaki ortalama hem acilirken hem
-   kapanirken yumusak gecsin. */
+/* Ust bardaki ince golgeyi/cizgiyi sadelestir */
 #masthead-container.ytd-app {
   box-shadow: none !important;
   border-bottom: none !important;
-  transition: transform 180ms ease !important;
 }
 
 /* --- Arama gecmisi ve otomatik tamamlama onerileri -----------------------
-   Kutuya tiklandiginda acilan acilir menu hicbir kosulda gorunmemeli.
-   YouTube bu menuyu surumune gore farkli elemanlarla ciziyor (eski arayuz:
-   tp-yt-iron-dropdown + ytd-searchbox-suggestion-renderer, yeni arayuz:
-   ytSuggestionComponent* siniflari). Bu yuzden isim yerine "uggestion"
-   parcasini yakalayan, ust bar ve popup kabina sinirli seciciler kullanilir;
-   boylece arayuz degisse de kutu kapali kalir. */
-ytd-masthead [class*="uggestion"],
-ytd-masthead [id*="uggestion"],
-ytd-masthead tp-yt-iron-dropdown,
-ytd-searchbox tp-yt-iron-dropdown,
-yt-searchbox tp-yt-iron-dropdown,
-tp-yt-iron-dropdown.ytd-searchbox,
-#suggestion-dropdown,
-ytd-search-suggestions-renderer,
-ytd-searchbox-suggestion-renderer,
-ytd-popup-container [class*="uggestion"],
-ytd-popup-container tp-yt-iron-dropdown:has([class*="uggestion"]),
-ytd-popup-container tp-yt-iron-dropdown:has(ytd-searchbox-suggestion-renderer),
-ytm-search-suggestions-renderer,
-.searchbox-suggestions {
+   Sadece ACILIR LISTENIN KENDISI hedeflenir.
+
+   Burada onceden [class*="uggestion"] gibi genis bir joker secici vardi:
+   YouTube'un yeni arama bileseninde arama kutusunun kapsayicisi da
+   "ytSuggestionComponent..." sinifini tasidigi icin joker, oneri listesiyle
+   BIRLIKTE arama kutusunu da gizliyordu (siyah ekran hatasi). Artik yalnizca
+   listeye ait spesifik elemanlar ve ust bar icinde ARIA'da listbox olarak
+   isaretlenen kutu gizleniyor; girdi alaninin kapsayicisi hicbir kosulda
+   eslesmiyor.
+
+   html:not(.ymin-safe) bir emniyet anahtaridir: content.js arama kutusunun
+   gorunmez oldugunu ya da ekran disina tastigi tespit ederse <html> uzerine
+   .ymin-safe ekler ve bu blok tumuyle devre disi kalir. Boylece en kotu
+   ihtimalde oneriler geri gelir, ama arama cubugu asla kaybolmaz. */
+html:not(.ymin-safe) ytd-searchbox tp-yt-iron-dropdown,
+html:not(.ymin-safe) yt-searchbox tp-yt-iron-dropdown,
+html:not(.ymin-safe) tp-yt-iron-dropdown.ytd-searchbox,
+html:not(.ymin-safe) ytd-searchbox #suggestion-dropdown,
+html:not(.ymin-safe) ytd-searchbox-suggestion-renderer,
+html:not(.ymin-safe) ytd-search-suggestions-renderer,
+html:not(.ymin-safe) ytd-masthead [role="listbox"],
+html:not(.ymin-safe) ytd-masthead [class*="SuggestionsContainer"],
+html:not(.ymin-safe) ytd-popup-container tp-yt-iron-dropdown:has(ytd-searchbox-suggestion-renderer),
+html:not(.ymin-safe) .sbdd_b,
+html:not(.ymin-safe) ytm-search-suggestions-renderer,
+html:not(.ymin-safe) .searchbox-suggestions {
   display: none !important;
 }
 
@@ -183,28 +188,36 @@ html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
    Yalnizca .ymin-blocked rotalarinda (ana sayfa, abonelikler, kesfet...).
    Arama yapilinca /results'a gecilir, content.js sinifi kaldirir ve ust bar
    kendi standart yerine geri doner; arama sonuclari ile izleme sayfasinin
-   duzenine dokunulmaz. */
+   duzenine dokunulmaz.
 
-/* Ust bar 56px yuksekliginde ve fixed; yarisi kadar yukari kaydirarak
-   dikey ortaliyoruz. Yatay ortalama zaten #container'daki
-   justify-content: center ile saglaniyor. */
-html.ymin-blocked #masthead-container.ytd-app {
-  transform: translateY(calc(50vh - 28px)) !important;
+   Ortalama, ust barin 56px oldugu varsayimina dayanan translateY(50vh - 28px)
+   yerine klasik top/left %50 + translate(-50%, -50%) ile yapiliyor: bar ne
+   kadar yuksek olursa olsun tam ortada kalir, ekran disina tasamaz.
+   z-index, barin her turlu kalintinin ustunde kalmasini garantiler. */
+html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app {
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 9999 !important;
 }
 
 /* Ortada duran bar bir "cubuk" gibi gorunmesin: zemini seffaflastir. */
-html.ymin-blocked #masthead-container.ytd-app,
-html.ymin-blocked ytd-masthead,
-html.ymin-blocked ytd-masthead #container.ytd-masthead,
-html.ymin-blocked #masthead #container {
+html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app,
+html.ymin-blocked:not(.ymin-safe) ytd-masthead,
+html.ymin-blocked:not(.ymin-safe) ytd-masthead #container.ytd-masthead,
+html.ymin-blocked:not(.ymin-safe) #masthead #container {
   background: transparent !important;
 }
 
 /* Kutuyu bir arama motoru ana sayfasi gibi genislet ve hafifce buyut.
    Yukseklik yerine scale kullaniliyor: hem eski (ytd-searchbox) hem yeni
    (yt-searchbox) bilesende ic hizalamayi bozmadan calisir. */
-html.ymin-blocked ytd-masthead #center.ytd-masthead,
-html.ymin-blocked #masthead #center {
+html.ymin-blocked:not(.ymin-safe) ytd-masthead #center.ytd-masthead,
+html.ymin-blocked:not(.ymin-safe) #masthead #center {
   flex: 0 1 584px !important;
   max-width: 584px !important;
   scale: 1.08;

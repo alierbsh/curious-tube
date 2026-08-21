@@ -2,13 +2,15 @@
  * YouTube Minimalist Search — content script
  *
  * CSS statik gizlemeyi yapar; bu dosya CSS'in tek basina cozemedigi
- * uc isi ustlenir:
+ * dort isi ustlenir:
  *   1) Rota takibi  — YouTube bir SPA oldugu icin sayfa degisimi
  *                     yeniden yukleme uretmez; <html> uzerindeki
  *                     isaretleri her gezinmede guncelleriz.
  *   2) Yonlendirme  — /shorts/<id> adresleri normal oynaticiya tasinir.
  *   3) Temizlik     — sonradan DOM'a enjekte edilen raf/reklam/promosyon
  *                     dugumleri gorulur gorulmez kaldirilir.
+ *   4) Emniyet      — arama kutusu gorunmuyorsa eklentinin riskli kurallari
+ *                     otomatik devre disi birakilir (bkz. ensureSearchVisible).
  */
 
 (() => {
@@ -38,6 +40,10 @@
     "ytd-statement-banner-renderer",
   ].join(",");
 
+  /** Arama girdisi: eski ve yeni ust bar bilesenlerinin ikisini de kapsar. */
+  const SEARCH_INPUT =
+    "input#search, input.ytSearchboxComponentInput, input[name='search_query']";
+
   const root = document.documentElement;
 
   /* ------------------------------------------------------------------ */
@@ -63,19 +69,59 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Emniyet: arama kutusu her kosulda ekranda kalmali                    */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Arama kutusunun gercekten gorunur oldugunu dogrular. Gizlenmisse ya da
+   * gorunur alanin disina tasmissa <html> uzerine .ymin-safe eklenir; bu
+   * sinif CSS tarafinda oneri gizleme ve ortalama bloklarini komple kapatir.
+   * Boylece hatali bir secici en kotu ihtimalle ozelligi devre disi birakir,
+   * kullaniciyi bos ekranda birakmaz.
+   */
+  function ensureSearchVisible() {
+    if (root.classList.contains("ymin-safe")) return;
+
+    // Yanlis alarmi onle: tam ekranda YouTube ust bari kendisi gizler,
+    // gorunmeyen sekmede ise olcum guvenilir degildir.
+    if (document.fullscreenElement) return;
+    if (document.visibilityState !== "visible") return;
+
+    const input = document.querySelector(SEARCH_INPUT);
+    if (!input) return; // Ust bar henuz cizilmedi; sonraki kontrolde bakilir.
+
+    const box = input.getBoundingClientRect();
+    const onScreen =
+      box.width > 0 &&
+      box.height > 0 &&
+      box.bottom > 0 &&
+      box.right > 0 &&
+      box.top < window.innerHeight &&
+      box.left < window.innerWidth;
+
+    if (onScreen) return;
+
+    root.classList.add("ymin-safe");
+    console.warn(
+      "[YouTube Minimalist Search] Arama kutusu gorunmuyor; oneri gizleme ve " +
+        "ortalama kurallari bu sekmede devre disi birakildi."
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Bos sayfa karsilamasi                                               */
   /* ------------------------------------------------------------------ */
 
   function renderHero(show) {
-    let hero = document.getElementById("ymin-hero");
+    const existing = document.getElementById("ymin-hero");
 
     if (!show) {
-      if (hero) hero.remove();
+      if (existing) existing.remove();
       return;
     }
-    if (hero || !document.body) return;
+    if (existing || !document.body) return;
 
-    hero = document.createElement("div");
+    const hero = document.createElement("div");
     hero.id = "ymin-hero";
 
     const title = document.createElement("div");
@@ -90,12 +136,29 @@
     document.body.appendChild(hero);
   }
 
-  /** Bos sayfada imleci dogrudan arama kutusuna koy. */
+  /** Bos sayfada imleci arama kutusuna koy (kullaniciyi rahatsiz etmeden). */
   function focusSearch() {
-    const input = document.querySelector(
-      "input#search, input.ytSearchboxComponentInput, input[name='search_query']"
+    const input = document.querySelector(SEARCH_INPUT);
+    if (!input || input.value) return;
+
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== root) return;
+
+    input.focus();
+  }
+
+  /**
+   * Ust bar Polymer tarafindan gec cizildigi icin kontrolleri birkac kez,
+   * artan araliklarla tekrarlariz.
+   */
+  function settle() {
+    [300, 900, 1800].forEach((delay) =>
+      setTimeout(() => {
+        ensureSearchVisible();
+        renderHero(root.classList.contains("ymin-blocked"));
+        if (root.classList.contains("ymin-blocked")) focusSearch();
+      }, delay)
     );
-    if (input && document.activeElement !== input) input.focus();
   }
 
   /* ------------------------------------------------------------------ */
@@ -105,24 +168,23 @@
   let lastHref = "";
 
   function apply() {
-    const first = !root.dataset.yminPage;
-    if (location.href === lastHref && !first) return;
-    lastHref = location.href;
-
     const page = currentPage();
-
     if (page === "shorts" && redirectShorts()) return;
+
+    // Not: burada eskiden "URL degismediyse cik" seklinde bir erken donus
+    // vardi. document_start'ta <body> henuz yok, dolayisiyla ilk cagri
+    // karsilama blogunu cizemiyor; erken donus yuzunden DOMContentLoaded'daki
+    // ikinci cagri da is yapmadan cikiyor ve bos sayfa tamamen bos kaliyordu.
+    const navigated = location.href !== lastHref;
+    lastHref = location.href;
 
     root.dataset.yminPage = page;
     root.classList.toggle("ymin-blocked", page === "blocked");
 
     renderHero(page === "blocked");
-    if (page === "blocked") {
-      // Arama kutusu ust bar cizildikten sonra hazir oluyor.
-      setTimeout(focusSearch, 300);
-    }
+    settle();
 
-    sweep(document);
+    if (navigated) sweep(document);
   }
 
   /* ------------------------------------------------------------------ */

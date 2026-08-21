@@ -64,6 +64,23 @@ satirini silin.
 **Baska bir sayfayi da bosaltmak** icin `content.js` icindeki
 `BLOCKED_PATHS` kumesine yolu ekleyin (ornek: `"/feed/history"`).
 
+## Sorun giderme
+
+Eklenti kendini korur: `content.js` her gezinmede arama kutusunun gercekten
+ekranda olup olmadigini olcer. Kutu gizlenmis ya da gorunur alanin disina
+tasmissa `<html>` uzerine `ymin-safe` sinifini ekler; bu sinif CSS'teki
+**oneri gizleme** ve **ortalama** bloklarini komple kapatir. Yani hatali bir
+secici en kotu ihtimalle bu iki ozelligi devre disi birakir, sizi bos ekranda
+birakmaz. Boyle bir durumda DevTools konsolunda su uyari gorunur:
+
+```
+[YouTube Minimalist Search] Arama kutusu gorunmuyor; oneri gizleme ve
+ortalama kurallari bu sekmede devre disi birakildi.
+```
+
+Bir sey hala ters gorunuyorsa `chrome://extensions` -> eklentiyi **yenile**
+ve YouTube sekmesini bir kez tazeleyin.
+
 ## Notlar
 
 - YouTube arayuzunu sik degistirir; bir bolum yeniden gorunmeye baslarsa
