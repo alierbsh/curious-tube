@@ -5,8 +5,9 @@
    Gizlenenler      : ana sayfa akisi, abonelikler, sol menu, oneriler,
                       Shorts, yorumlar, reklamlar, promosyon balonlari,
                       arama gecmisi / otomatik tamamlama acilir menusu
-   Bos sayfada arama cubugu ekranin tam ortasina alinir; /results ve /watch
-   acildiginda ust bardaki standart yerine geri doner.
+   Bos sayfada ekranin tam ortasindaki arama cubugu disinda hicbir sey
+   gorunmez (ek metin yok, placeholder da content.js ile bosaltilir);
+   /results ve /watch acildiginda bar standart yerine geri doner.
    ===================================================================== */
 
 /* ---------------------------------------------------------------------
@@ -151,37 +152,6 @@ html.ymin-blocked #page-manager,
 html.ymin-blocked ytd-browse,
 html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
   display: none !important;
-}
-
-/* Bos sayfada gosterilen sade karsilama blogu (content.js olusturur).
-   padding-top, metni ekran ortasina alinan arama cubugunun altina itiyor. */
-#ymin-hero {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 190px;
-  box-sizing: border-box;
-  gap: 8px;
-  pointer-events: none;
-  font-family: "Roboto", "Arial", sans-serif;
-  text-align: center;
-  z-index: 1;
-}
-
-#ymin-hero .ymin-hero-title {
-  font-size: 22px;
-  font-weight: 500;
-  color: var(--yt-spec-text-primary, #0f0f0f);
-  opacity: 0.85;
-}
-
-#ymin-hero .ymin-hero-sub {
-  font-size: 14px;
-  color: var(--yt-spec-text-secondary, #606060);
-  opacity: 0.7;
 }
 
 /* --- Bos sayfada arama cubugu: ekranin tam ortasi (Google gorunumu) ------

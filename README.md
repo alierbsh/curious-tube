@@ -18,8 +18,10 @@ arama sonuclari** kalir.
 | Reklamlar, promosyon balonlari, bitis ekrani kartlari | |
 
 Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
-ortasinda** durur; bir arama yapildiginda ya da video acildiginda ust bardaki
-standart yerine geri doner, sonuc ve izleme duzeni bozulmaz.
+ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
+yoktur, kutunun icindeki stok "Ara" / "Search" yazisi da `content.js`
+tarafindan silinir. Bir arama yapildiginda ya da video acildiginda bar ust
+bardaki standart yerine geri doner, sonuc ve izleme duzeni bozulmaz.
 
 Oturumunuz cerezlerde durdugu icin **giris yapmis halde kalirsiniz**;
 sadece hesap arayuzu gorunmez olur.
@@ -37,7 +39,7 @@ sadece hesap arayuzu gorunmez olur.
 | --- | --- |
 | `manifest.json` | MV3 tanimi; yalnizca `www.youtube.com` ve `m.youtube.com` icin izin ister. Ekstra izin (storage, tabs vb.) yoktur. |
 | `content.css` | Asil gizleme katmani. `document_start` ile enjekte edildigi icin sayfa hic titremez. |
-| `content.js` | SPA rota takibi, Shorts yonlendirmesi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
+| `content.js` | SPA rota takibi, Shorts yonlendirmesi, placeholder temizligi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
 | `icons/generate_icons.py` | Ikonlari yeniden uretir: `python3 icons/generate_icons.py` |
 
 ## Ozellestirme
@@ -56,6 +58,9 @@ ytd-masthead #avatar-btn { display: block !important; }
 
 **Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
 tamamlama onerileri" blogunu silin.
+
+**Placeholder'i geri getirmek** icin `content.js` icindeki
+`stripPlaceholder()` cagrilarini kaldirin.
 
 **Arama cubugunu her zaman ustte tutmak** icin 3. bolumdeki
 `html.ymin-blocked #masthead-container.ytd-app` kuralindaki `transform`

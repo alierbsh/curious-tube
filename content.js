@@ -46,6 +46,9 @@
 
   const root = document.documentElement;
 
+  /** Girdinin placeholder niteligini izleyen gozlemci (stripPlaceholder). */
+  let placeholderObserver = null;
+
   /* ------------------------------------------------------------------ */
   /* Rota                                                                */
   /* ------------------------------------------------------------------ */
@@ -109,31 +112,37 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Bos sayfa karsilamasi                                               */
+  /* Arama kutusu                                                        */
   /* ------------------------------------------------------------------ */
 
-  function renderHero(show) {
-    const existing = document.getElementById("ymin-hero");
+  /**
+   * Kutunun icindeki stok "Ara" / "Search" metnini siler. YouTube kutuyu
+   * yeniden cizdiginde ya da dil degistiginde placeholder geri gelebildigi
+   * icin, girdinin uzerine sadece bu nitelige bakan bir gozlemci baglanir;
+   * geri yazildigi anda tekrar bosaltilir.
+   */
+  function stripPlaceholder() {
+    const input = document.querySelector(SEARCH_INPUT);
+    if (!input) return;
 
-    if (!show) {
-      if (existing) existing.remove();
-      return;
+    if (input.getAttribute("placeholder")) input.setAttribute("placeholder", "");
+
+    if (!placeholderObserver) {
+      placeholderObserver = new MutationObserver((records) => {
+        for (const record of records) {
+          const el = record.target;
+          // Bos degere geri donus yeni bir kayit uretmez: dongu olusmaz.
+          if (el.getAttribute("placeholder")) el.setAttribute("placeholder", "");
+        }
+      });
     }
-    if (existing || !document.body) return;
 
-    const hero = document.createElement("div");
-    hero.id = "ymin-hero";
-
-    const title = document.createElement("div");
-    title.className = "ymin-hero-title";
-    title.textContent = "Arama modu";
-
-    const sub = document.createElement("div");
-    sub.className = "ymin-hero-sub";
-    sub.textContent = "Aramak istediginizi yukaridaki cubuga yazin.";
-
-    hero.append(title, sub);
-    document.body.appendChild(hero);
+    // Gezinmede girdi elemani yenilenebilir; her seferinde guncel dugume bagla.
+    placeholderObserver.disconnect();
+    placeholderObserver.observe(input, {
+      attributes: true,
+      attributeFilter: ["placeholder"],
+    });
   }
 
   /** Bos sayfada imleci arama kutusuna koy (kullaniciyi rahatsiz etmeden). */
@@ -155,7 +164,7 @@
     [300, 900, 1800].forEach((delay) =>
       setTimeout(() => {
         ensureSearchVisible();
-        renderHero(root.classList.contains("ymin-blocked"));
+        stripPlaceholder();
         if (root.classList.contains("ymin-blocked")) focusSearch();
       }, delay)
     );
@@ -171,17 +180,16 @@
     const page = currentPage();
     if (page === "shorts" && redirectShorts()) return;
 
-    // Not: burada eskiden "URL degismediyse cik" seklinde bir erken donus
-    // vardi. document_start'ta <body> henuz yok, dolayisiyla ilk cagri
-    // karsilama blogunu cizemiyor; erken donus yuzunden DOMContentLoaded'daki
-    // ikinci cagri da is yapmadan cikiyor ve bos sayfa tamamen bos kaliyordu.
+    // Not: burada "URL degismediyse cik" seklinde bir erken donus yok.
+    // document_start'ta <body> henuz olmadigi icin ilk cagri her isi
+    // yapamaz; erken donus, sonraki cagrilarin da bos gecmesine yol aciyordu.
     const navigated = location.href !== lastHref;
     lastHref = location.href;
 
     root.dataset.yminPage = page;
     root.classList.toggle("ymin-blocked", page === "blocked");
 
-    renderHero(page === "blocked");
+    stripPlaceholder();
     settle();
 
     if (navigated) sweep(document);
