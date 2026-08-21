@@ -3,7 +3,10 @@
    YouTube'u bir arama motoruna indirger.
    Gorunur kalanlar : arama cubugu + arama butonu + arama sonuclari + oynatici
    Gizlenenler      : ana sayfa akisi, abonelikler, sol menu, oneriler,
-                      Shorts, yorumlar, reklamlar, promosyon balonlari
+                      Shorts, yorumlar, reklamlar, promosyon balonlari,
+                      arama gecmisi / otomatik tamamlama acilir menusu
+   Bos sayfada arama cubugu ekranin tam ortasina alinir; /results ve /watch
+   acildiginda ust bardaki standart yerine geri doner.
    ===================================================================== */
 
 /* ---------------------------------------------------------------------
@@ -62,10 +65,37 @@ yt-searchbox,
   visibility: visible !important;
 }
 
-/* Ust bardaki ince golgeyi/cizgiyi sadelestir */
+/* Ust bardaki ince golgeyi/cizgiyi sadelestir.
+   transition burada tanimli: bos sayfadaki ortalama hem acilirken hem
+   kapanirken yumusak gecsin. */
 #masthead-container.ytd-app {
   box-shadow: none !important;
   border-bottom: none !important;
+  transition: transform 180ms ease !important;
+}
+
+/* --- Arama gecmisi ve otomatik tamamlama onerileri -----------------------
+   Kutuya tiklandiginda acilan acilir menu hicbir kosulda gorunmemeli.
+   YouTube bu menuyu surumune gore farkli elemanlarla ciziyor (eski arayuz:
+   tp-yt-iron-dropdown + ytd-searchbox-suggestion-renderer, yeni arayuz:
+   ytSuggestionComponent* siniflari). Bu yuzden isim yerine "uggestion"
+   parcasini yakalayan, ust bar ve popup kabina sinirli seciciler kullanilir;
+   boylece arayuz degisse de kutu kapali kalir. */
+ytd-masthead [class*="uggestion"],
+ytd-masthead [id*="uggestion"],
+ytd-masthead tp-yt-iron-dropdown,
+ytd-searchbox tp-yt-iron-dropdown,
+yt-searchbox tp-yt-iron-dropdown,
+tp-yt-iron-dropdown.ytd-searchbox,
+#suggestion-dropdown,
+ytd-search-suggestions-renderer,
+ytd-searchbox-suggestion-renderer,
+ytd-popup-container [class*="uggestion"],
+ytd-popup-container tp-yt-iron-dropdown:has([class*="uggestion"]),
+ytd-popup-container tp-yt-iron-dropdown:has(ytd-searchbox-suggestion-renderer),
+ytm-search-suggestions-renderer,
+.searchbox-suggestions {
+  display: none !important;
 }
 
 /* ---------------------------------------------------------------------
@@ -118,7 +148,8 @@ html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
   display: none !important;
 }
 
-/* Bos sayfada gosterilen sade karsilama blogu (content.js olusturur) */
+/* Bos sayfada gosterilen sade karsilama blogu (content.js olusturur).
+   padding-top, metni ekran ortasina alinan arama cubugunun altina itiyor. */
 #ymin-hero {
   position: fixed;
   inset: 0;
@@ -126,6 +157,8 @@ html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding-top: 190px;
+  box-sizing: border-box;
   gap: 8px;
   pointer-events: none;
   font-family: "Roboto", "Arial", sans-serif;
@@ -144,6 +177,37 @@ html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
   font-size: 14px;
   color: var(--yt-spec-text-secondary, #606060);
   opacity: 0.7;
+}
+
+/* --- Bos sayfada arama cubugu: ekranin tam ortasi (Google gorunumu) ------
+   Yalnizca .ymin-blocked rotalarinda (ana sayfa, abonelikler, kesfet...).
+   Arama yapilinca /results'a gecilir, content.js sinifi kaldirir ve ust bar
+   kendi standart yerine geri doner; arama sonuclari ile izleme sayfasinin
+   duzenine dokunulmaz. */
+
+/* Ust bar 56px yuksekliginde ve fixed; yarisi kadar yukari kaydirarak
+   dikey ortaliyoruz. Yatay ortalama zaten #container'daki
+   justify-content: center ile saglaniyor. */
+html.ymin-blocked #masthead-container.ytd-app {
+  transform: translateY(calc(50vh - 28px)) !important;
+}
+
+/* Ortada duran bar bir "cubuk" gibi gorunmesin: zemini seffaflastir. */
+html.ymin-blocked #masthead-container.ytd-app,
+html.ymin-blocked ytd-masthead,
+html.ymin-blocked ytd-masthead #container.ytd-masthead,
+html.ymin-blocked #masthead #container {
+  background: transparent !important;
+}
+
+/* Kutuyu bir arama motoru ana sayfasi gibi genislet ve hafifce buyut.
+   Yukseklik yerine scale kullaniliyor: hem eski (ytd-searchbox) hem yeni
+   (yt-searchbox) bilesende ic hizalamayi bozmadan calisir. */
+html.ymin-blocked ytd-masthead #center.ytd-masthead,
+html.ymin-blocked #masthead #center {
+  flex: 0 1 584px !important;
+  max-width: 584px !important;
+  scale: 1.08;
 }
 
 /* ---------------------------------------------------------------------

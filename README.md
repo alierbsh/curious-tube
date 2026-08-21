@@ -14,7 +14,12 @@ arama sonuclari** kalir.
 | Ust bardaki logo, olustur, bildirim, avatar | Video oynatici (`/watch`) |
 | Izleme sayfasinda "Siradaki" onerileri ve yorumlar | Video basligi ve aciklamasi |
 | Shorts (her yerde; `/shorts/<id>` -> `/watch?v=<id>`) | |
+| Arama gecmisi ve otomatik tamamlama onerileri (dropdown) | |
 | Reklamlar, promosyon balonlari, bitis ekrani kartlari | |
+
+Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
+ortasinda** durur; bir arama yapildiginda ya da video acildiginda ust bardaki
+standart yerine geri doner, sonuc ve izleme duzeni bozulmaz.
 
 Oturumunuz cerezlerde durdugu icin **giris yapmis halde kalirsiniz**;
 sadece hesap arayuzu gorunmez olur.
@@ -48,6 +53,13 @@ ytd-masthead #avatar-btn { display: block !important; }
 
 **Yorumlari geri acmak** icin `ytd-comments#comments` secicisini
 5. bolumdeki listeden cikarin.
+
+**Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
+tamamlama onerileri" blogunu silin.
+
+**Arama cubugunu her zaman ustte tutmak** icin 3. bolumdeki
+`html.ymin-blocked #masthead-container.ytd-app` kuralindaki `transform`
+satirini silin.
 
 **Baska bir sayfayi da bosaltmak** icin `content.js` icindeki
 `BLOCKED_PATHS` kumesine yolu ekleyin (ornek: `"/feed/history"`).
