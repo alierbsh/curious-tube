@@ -17,6 +17,9 @@ arama sonuclari** kalir.
 | Arama gecmisi ve otomatik tamamlama onerileri (dropdown) | |
 | Reklamlar, promosyon balonlari, bitis ekrani kartlari | |
 
+Kutuya tiklandiginda gorunum sabit kalir: odak halindeki mavi cerceve, golge
+ve solda beliren ikinci buyutec ikonu bastirilir; kutu ne buyur ne kayar.
+
 Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
 ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
 yoktur, kutunun icindeki stok "Ara" / "Search" yazisi da `content.js`
@@ -58,6 +61,10 @@ ytd-masthead #avatar-btn { display: block !important; }
 
 **Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
 tamamlama onerileri" blogunu silin.
+
+**Kutuyu tamamen cercevesiz yapmak** icin 1. bolumdeki odak blogunda
+`border-color` degerini `transparent` yapin (boyut degismez, cunku
+`border-width`'e dokunulmuyor).
 
 **Placeholder'i geri getirmek** icin `content.js` icindeki
 `stripPlaceholder()` cagrilarini kaldirin.

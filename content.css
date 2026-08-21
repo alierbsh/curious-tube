@@ -5,6 +5,8 @@
    Gizlenenler      : ana sayfa akisi, abonelikler, sol menu, oneriler,
                       Shorts, yorumlar, reklamlar, promosyon balonlari,
                       arama gecmisi / otomatik tamamlama acilir menusu
+   Kutuya tiklandiginda gorunum degismez: mavi cerceve, golge ve solda
+   beliren buyutec ikonu bastirilir.
    Bos sayfada ekranin tam ortasindaki arama cubugu disinda hicbir sey
    gorunmez (ek metin yok, placeholder da content.js ile bosaltilir);
    /results ve /watch acildiginda bar standart yerine geri doner.
@@ -66,6 +68,62 @@ yt-searchbox,
 .ytSearchboxComponentHost,
 .ytSearchboxComponentSearchButton {
   visibility: visible !important;
+}
+
+/* --- Odaklanma (focus) gorunumu -----------------------------------------
+   Kutuya tiklandiginda YouTube ucu birden sey yapar: kenarligi maviye cevirir
+   (bazen golge ekler), solda ikinci bir buyutec ikonu acar ve bu ikon yer
+   kapladigi icin yazi saga kayar.
+
+   Yaklasim: odak secicisini tahmin etmek yerine ilgili ozellikleri HER
+   DURUMDA ayni degere sabitliyoruz. Ayni deger hem odakli hem odaksiz halde
+   gecerli oldugundan gecis sirasinda degisecek bir sey kalmiyor; boylece
+   YouTube'un odak isaretinin adini ([has-focus], ...Focused, vb.) bilmek de
+   gerekmiyor. Kurallarimiz !important, YouTube'un kendi kurallari degil.
+
+   Kenarlik rengi temaya uyan degiskenden okunur (koyu/acik temada dogru
+   gorunur); tamamen cerceveisiz bir kutu isterseniz asagidaki border-color
+   degerini "transparent" yapmak yeterli. */
+
+ytd-masthead #search-form,
+ytd-masthead ytd-searchbox #container.ytd-searchbox,
+ytd-masthead ytd-searchbox #container.ytd-searchbox:focus-within,
+ytd-masthead yt-searchbox .ytSearchboxComponentInputBox,
+ytd-masthead yt-searchbox .ytSearchboxComponentInputBox:focus-within {
+  border-color: var(
+    --ytd-searchbox-legacy-border-color,
+    var(--yt-spec-10-percent-layer, rgba(128, 128, 128, 0.35))
+  ) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  /* Renk animasyonlu gecmesin: odakta hicbir hareket olmasin. */
+  transition: none !important;
+}
+
+/* Girdinin kendi odak halkasi (tarayici outline'i dahil) */
+ytd-masthead input#search,
+ytd-masthead input#search:focus,
+ytd-masthead input#search:focus-visible,
+ytd-masthead input.ytSearchboxComponentInput,
+ytd-masthead input.ytSearchboxComponentInput:focus,
+ytd-masthead input.ytSearchboxComponentInput:focus-visible,
+ytd-masthead input[name="search_query"]:focus,
+ytd-masthead input[name="search_query"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* Odakta solda beliren ikinci buyutec ikonu. Sagdaki arama BUTONU
+   (#search-icon-legacy / .ytSearchboxComponentSearchButton) bundan
+   etkilenmez: id secicileri birebir eslesir, buton ayri bir dugumdur.
+   Ikon her iki durumda da display:none oldugu icin hic yer kaplamaz;
+   padding/width degerlerine dokunmadan kaymanin kaynagi ortadan kalkar. */
+ytd-masthead ytd-searchbox #search-icon,
+ytd-masthead #search-icon.ytd-searchbox,
+ytd-masthead yt-searchbox .ytSearchboxComponentSearchIcon,
+ytd-masthead .ytSearchboxComponentInputBox > yt-icon:first-child {
+  display: none !important;
 }
 
 /* Ust bardaki ince golgeyi/cizgiyi sadelestir */
