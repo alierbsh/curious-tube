@@ -394,12 +394,23 @@ tp-yt-iron-overlay-backdrop[opened] {
    alinamazsa (or. eklenti yeniden yuklendiyse) tek bir kural bile devreye
    girmez ve sayfa stok zeminine doner.
 
-   background-attachment: fixed, gorseli kaydirmadan viewport'a sabitler. */
+   background-attachment: fixed, gorseli kaydirmadan viewport'a sabitler.
+
+   Boyut ve konum hakkinda: gorselin tam ortasinda beyaz bir yazi bandi var,
+   arama cubugu da ekranin tam ortasinda duruyor. "cover + center" ikisini
+   ust uste getiriyordu (yazi, cubugun ~5 px altina denk geliyordu). Cozum:
+   gorseli %130 buyutup dikeyde %15'e cekmek. Dikey yuzde kucuk oldukca
+   gorsel asagi kayar; %15'te yazi bandi cubugun 140-220 px altina iner.
+
+   max(130%, 190vh): 130% zoom degeri; 190vh ise cok dar pencerelerde
+   dikey kaplamayi garantiler (gorsel orani 1.465, yani yuksekligi
+   kaplamak icin genislik >= 146.5vh olmali; 1.3 x 146.5 = 190). Ikinci
+   deger devreye girmedigi surece davranis duz %130 ile aynidir. */
 
 html.ymin-wallpaper {
   background-image: var(--ymin-wallpaper) !important;
-  background-size: cover !important;
-  background-position: center !important;
+  background-size: max(130%, 190vh) !important;
+  background-position: center 15% !important;
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
 }

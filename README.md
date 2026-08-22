@@ -76,7 +76,10 @@ tamamlama onerileri" blogunu silin.
 **Arka plan gorselini degistirmek** icin kok dizindeki `wallpaper.png`
 dosyasini degistirin (ayni ad korunursa baska hicbir yere dokunmak gerekmez).
 Yerlesim `content.css` 8. bolumdeki `background-size / position / attachment`
-degerlerinden ayarlanir.
+degerlerinden ayarlanir. Mevcut degerler (`max(130%, 190vh)` + `center 15%`)
+bu gorsele ozeldir: ortasindaki yazi bandi, ekranin ortasindaki arama
+cubugunun arkasina denk gelmesin diye gorsel buyutulup asagi kaydirildi.
+Dikey yuzde ne kadar kucukse gorsel o kadar asagi kayar.
 
 **Icerik sayfalarindaki karartmayi kaldirmak** icin 8. bolumdeki
 `html.ymin-wallpaper:not(.ymin-blocked)` kuralini silin. O zaman gorsel her
