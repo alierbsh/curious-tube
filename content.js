@@ -11,9 +11,9 @@
  *                     dugumleri gorulur gorulmez kaldirilir.
  *   4) Emniyet      — arama kutusu gorunmuyorsa eklentinin riskli kurallari
  *                     otomatik devre disi birakilir (bkz. ensureSearchVisible).
- *   5) Varlik       — arama kutusunun arka plan gorseli, eklenti ici adresi
- *                     ancak calisma aninda bilindigi icin CSS degiskenine
- *                     buradan yazilir (bkz. applyWallpaper).
+ *   5) Varlik       — sayfanin arka plan gorseli, eklenti ici adresi ancak
+ *                     calisma aninda bilindigi icin CSS degiskenine buradan
+ *                     yazilir (bkz. applyWallpaper).
  */
 
 (() => {
@@ -119,13 +119,14 @@
   /* ------------------------------------------------------------------ */
 
   /**
-   * Arama kutusunun arka plan gorselini CSS'e aktarir.
+   * Sayfanin arka plan gorselini CSS'e aktarir.
    *
    * content.css icinden dogrudan url("wallpaper.png") yazilamaz: o yol
    * eklenti koku yerine sayfaya gore cozulur. Dosyanin gercek adresi
    * yalnizca chrome.runtime.getURL ile bilinir (ve manifest'teki
    * web_accessible_resources sayesinde sayfadan yuklenebilir). Adresi
-   * --ymin-wallpaper degiskenine yazip bicimlendirmeyi CSS'e birakiyoruz.
+   * --ymin-wallpaper degiskenine yazip bicimlendirmeyi (cover, fixed, ...)
+   * CSS'e birakiyoruz.
    */
   function applyWallpaper() {
     try {

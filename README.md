@@ -23,10 +23,12 @@ Kutuya tiklandiginda YouTube'un mavi odak cercevesi ezilir ve yerine
 **kirmizi** bir cerceve + yumusak hale gelir. Sadece renk ve golge degistigi
 icin kutu ne buyur ne kayar.
 
-Kutunun zemininde `wallpaper.png` durur; uzerindeki metin beyaz, kalin ve
-golgeli yazilir. Gorsel `content.css` icinden degil, `content.js`'in
+Sayfanin tamamina `wallpaper.png` serilir (`cover` + `fixed`, yani kaydirirken
+kaymaz). Gorsel `content.css` icinden degil, `content.js`'in
 `--ymin-wallpaper` degiskenine yazdigi calisma zamani adresinden gelir:
-eklenti ici bir dosyanin yolu CSS'ten dogrudan cozulemez.
+eklenti ici bir dosyanin yolu CSS'ten dogrudan cozulemez. Bos sayfada gorsel
+tam parlakligindadir; arama sonuclari ve izleme sayfasinda uzerine ince bir
+karartma serilir, boylece yazilar gorselin acik bolgelerinde de okunur.
 
 Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
 ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
@@ -51,7 +53,7 @@ sadece hesap arayuzu gorunmez olur.
 | `manifest.json` | MV3 tanimi; yalnizca `www.youtube.com` ve `m.youtube.com` icin izin ister. Ekstra izin (storage, tabs vb.) yoktur. |
 | `content.css` | Asil gizleme katmani. `document_start` ile enjekte edildigi icin sayfa hic titremez. |
 | `content.js` | SPA rota takibi, Shorts yonlendirmesi, placeholder temizligi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
-| `wallpaper.png` | Arama kutusunun arka plan gorseli. `manifest.json` icinde `web_accessible_resources` olarak tanimlidir; adresi calisma aninda `chrome.runtime.getURL` ile alinir. |
+| `wallpaper.png` | Sayfanin arka plan gorseli. `manifest.json` icinde `web_accessible_resources` olarak tanimlidir; adresi calisma aninda `chrome.runtime.getURL` ile alinir. |
 | `icons/generate_icons.py` | Ikonlari yeniden uretir: `python3 icons/generate_icons.py` |
 
 ## Ozellestirme
@@ -73,10 +75,12 @@ tamamlama onerileri" blogunu silin.
 
 **Arka plan gorselini degistirmek** icin kok dizindeki `wallpaper.png`
 dosyasini degistirin (ayni ad korunursa baska hicbir yere dokunmak gerekmez).
-Gorselin hangi seridinin gorunecegini `content.css` 1. bolumdeki
-`background-position: center 22%` degeri belirler; bu gorselin ortasinda beyaz
-bir yazi bandi oldugu icin serit yildizli boslugu gosterecek sekilde %22'ye
-ayarlandi.
+Yerlesim `content.css` 8. bolumdeki `background-size / position / attachment`
+degerlerinden ayarlanir.
+
+**Icerik sayfalarindaki karartmayi kaldirmak** icin 8. bolumdeki
+`html.ymin-wallpaper:not(.ymin-blocked)` kuralini silin. O zaman gorsel her
+sayfada tam parlakliginda gorunur (sonuc yazilari acik zeminlerde okunmayabilir).
 
 **Odak renginin tonunu degistirmek** icin `content.css` 1. bolumdeki
 `--ymin-focus-red` (ve halesi icin `--ymin-focus-glow`) degiskenlerini

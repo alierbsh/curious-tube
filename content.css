@@ -6,8 +6,9 @@
                       Shorts, yorumlar, reklamlar, promosyon balonlari,
                       arama gecmisi / otomatik tamamlama acilir menusu
    Kutuya tiklandiginda YouTube'un mavi cercevesi yerine kirmizi bir odak
-   cercevesi yanar; kutu ne buyur ne kayar. Kutunun zeminine wallpaper.png
-   yerlesir (adresi content.js'ten --ymin-wallpaper degiskeniyle gelir).
+   cercevesi yanar; kutu ne buyur ne kayar.
+   Sayfa zeminine wallpaper.png serilir (adresi content.js'ten
+   --ymin-wallpaper degiskeniyle gelir).
    Bos sayfada ekranin tam ortasindaki arama cubugu disinda hicbir sey
    gorunmez (ek metin yok, placeholder da content.js ile bosaltilir);
    /results ve /watch acildiginda bar standart yerine geri doner.
@@ -142,66 +143,6 @@ ytd-masthead #search-icon.ytd-searchbox,
 ytd-masthead yt-searchbox .ytSearchboxComponentSearchIcon,
 ytd-masthead .ytSearchboxComponentInputBox > yt-icon:first-child {
   display: none !important;
-}
-
-/* --- Arama kutusunun arka plan gorseli -----------------------------------
-   Gorselin adresi content.js tarafindan --ymin-wallpaper degiskenine
-   yaziliyor (chrome.runtime.getURL + manifest'teki web_accessible_resources).
-   Burada dogrudan url("wallpaper.png") yazilmaz: o yol eklenti koku yerine
-   YouTube sayfasina gore cozulur ve dosya bulunamaz.
-
-   Kurallar .ymin-wallpaper sinifina bagli; sinifi da JS ekliyor. Yani gorsel
-   yuklenemezse (or. eklenti baglami dustuyse) tek bir kural bile devreye
-   girmez, kutu stok gorunumunde kalir.
-
-   background-position hakkinda: gorselin tam ortasinda beyaz bir yazi bandi
-   var. Arama kutusu cok yatik bir dikdortgen oldugu icin "cover" gorselin
-   yalnizca ince bir yatay seridini gosterir; dikeyde "center" denseydi tam o
-   yazi bandi kirpilir ve kullanicinin yazdigi metinle ust uste binerdi. Bu
-   yuzden serit %22'ye, yildizli bosluga sabitlendi. Baska bir bant istenirse
-   sadece bu yuzde degisir. */
-
-html.ymin-wallpaper ytd-masthead ytd-searchbox #container.ytd-searchbox,
-html.ymin-wallpaper ytd-masthead yt-searchbox .ytSearchboxComponentInputBox {
-  background-image: var(--ymin-wallpaper) !important;
-  background-size: cover !important;
-  background-position: center 22% !important;
-  background-repeat: no-repeat !important;
-  /* Gorsel cizilene kadar altta koyu bir zemin dursun (gorsel de koyu). */
-  background-color: #0f0f0f !important;
-}
-
-/* Girdinin ve sarmalayicisinin kendi zemini gorseli ortmesin. */
-html.ymin-wallpaper ytd-masthead #search-input,
-html.ymin-wallpaper ytd-masthead input#search,
-html.ymin-wallpaper ytd-masthead input.ytSearchboxComponentInput,
-html.ymin-wallpaper ytd-masthead input[name="search_query"] {
-  background: transparent !important;
-}
-
-/* Yazilan metin gorselin uzerinde net okunsun. */
-html.ymin-wallpaper ytd-masthead input#search,
-html.ymin-wallpaper ytd-masthead input.ytSearchboxComponentInput,
-html.ymin-wallpaper ytd-masthead input[name="search_query"] {
-  color: #ffffff !important;
-  font-weight: 600 !important;
-  caret-color: #ffffff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.7) !important;
-}
-
-/* Yeni bilesende arama butonu kutunun ICINDE duruyor; gri zemini gorselin
-   uzerinde yama gibi gorunmesin diye seffaflastirilip ikonu beyaza cekilir.
-   Eski arayuzdeki #search-icon-legacy kutunun disinda oldugu icin ellenmez. */
-html.ymin-wallpaper ytd-masthead .ytSearchboxComponentSearchButton {
-  background: transparent !important;
-  border-color: transparent !important;
-}
-
-html.ymin-wallpaper ytd-masthead .ytSearchboxComponentSearchButton yt-icon,
-html.ymin-wallpaper ytd-masthead .ytSearchboxComponentSearchButton svg {
-  color: #ffffff !important;
-  fill: #ffffff !important;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
 }
 
 /* Ust bardaki ince golgeyi/cizgiyi sadelestir */
@@ -442,7 +383,61 @@ tp-yt-iron-overlay-backdrop[opened] {
 }
 
 /* ---------------------------------------------------------------------
-   8) MOBIL (m.youtube.com) — temel sadelestirme
+   8) SAYFA ARKA PLANI — wallpaper.png tum ekrani kaplar
+   ---------------------------------------------------------------------
+   Gorselin adresi content.js tarafindan --ymin-wallpaper degiskenine
+   yaziliyor (chrome.runtime.getURL + manifest'teki web_accessible_resources).
+   CSS icinden dogrudan url("wallpaper.png") yazilamaz: o yol eklenti koku
+   yerine YouTube sayfasina gore cozulur ve dosya bulunamaz.
+
+   Butun kurallar JS'in ekledigi .ymin-wallpaper sinifina bagli; gorsel
+   alinamazsa (or. eklenti yeniden yuklendiyse) tek bir kural bile devreye
+   girmez ve sayfa stok zeminine doner.
+
+   background-attachment: fixed, gorseli kaydirmadan viewport'a sabitler. */
+
+html.ymin-wallpaper {
+  background-image: var(--ymin-wallpaper) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+/* Icerikli sayfalarda (arama sonuclari, izleme) gorselin uzerine ince bir
+   karartma serilir: aksi halde beyaz sonuc yazilari gorselin acik
+   bolgelerinde okunmaz oluyor. Bos sayfada karartma yok, gorsel tam
+   parlakliginda gorunur. Karartmayi kaldirmak icin bu kurali silmek yeterli. */
+html.ymin-wallpaper:not(.ymin-blocked) {
+  background-image: linear-gradient(
+      rgba(0, 0, 0, 0.55),
+      rgba(0, 0, 0, 0.55)
+    ),
+    var(--ymin-wallpaper) !important;
+}
+
+/* YouTube'un opak zeminleri gorseli ezmesin. Yalnizca SAYFA duzeyindeki
+   kapsayicilar seffaflastirilir; video oynatici, dusey menu vb. kendi
+   zeminlerini korur. */
+html.ymin-wallpaper body,
+html.ymin-wallpaper ytd-app,
+html.ymin-wallpaper #content.ytd-app,
+html.ymin-wallpaper ytd-page-manager,
+html.ymin-wallpaper #page-manager,
+html.ymin-wallpaper ytd-browse,
+html.ymin-wallpaper ytd-search,
+html.ymin-wallpaper ytd-watch-flexy,
+html.ymin-wallpaper ytd-two-column-search-results-renderer,
+html.ymin-wallpaper #primary.ytd-watch-flexy,
+html.ymin-wallpaper #masthead-container.ytd-app,
+html.ymin-wallpaper ytd-masthead,
+html.ymin-wallpaper ytd-masthead #container.ytd-masthead,
+html.ymin-wallpaper #masthead #container {
+  background: transparent !important;
+}
+
+/* ---------------------------------------------------------------------
+   9) MOBIL (m.youtube.com) — temel sadelestirme
    --------------------------------------------------------------------- */
 
 ytm-pivot-bar-renderer,
