@@ -11,6 +11,9 @@
  *                     dugumleri gorulur gorulmez kaldirilir.
  *   4) Emniyet      — arama kutusu gorunmuyorsa eklentinin riskli kurallari
  *                     otomatik devre disi birakilir (bkz. ensureSearchVisible).
+ *   5) Varlik       — arama kutusunun arka plan gorseli, eklenti ici adresi
+ *                     ancak calisma aninda bilindigi icin CSS degiskenine
+ *                     buradan yazilir (bkz. applyWallpaper).
  */
 
 (() => {
@@ -116,6 +119,28 @@
   /* ------------------------------------------------------------------ */
 
   /**
+   * Arama kutusunun arka plan gorselini CSS'e aktarir.
+   *
+   * content.css icinden dogrudan url("wallpaper.png") yazilamaz: o yol
+   * eklenti koku yerine sayfaya gore cozulur. Dosyanin gercek adresi
+   * yalnizca chrome.runtime.getURL ile bilinir (ve manifest'teki
+   * web_accessible_resources sayesinde sayfadan yuklenebilir). Adresi
+   * --ymin-wallpaper degiskenine yazip bicimlendirmeyi CSS'e birakiyoruz.
+   */
+  function applyWallpaper() {
+    try {
+      const url = chrome.runtime.getURL("wallpaper.png");
+      if (!url) return;
+      root.style.setProperty("--ymin-wallpaper", 'url("' + url + '")');
+      root.classList.add("ymin-wallpaper");
+    } catch (_) {
+      // Eklenti yeniden yuklendiginde eski sekmelerde runtime baglami duser;
+      // bu durumda gorseli hic uygulamayip stok gorunumde kaliriz.
+      root.classList.remove("ymin-wallpaper");
+    }
+  }
+
+  /**
    * Kutunun icindeki stok "Ara" / "Search" metnini siler. YouTube kutuyu
    * yeniden cizdiginde ya da dil degistiginde placeholder geri gelebildigi
    * icin, girdinin uzerine sadece bu nitelige bakan bir gozlemci baglanir;
@@ -189,6 +214,7 @@
     root.dataset.yminPage = page;
     root.classList.toggle("ymin-blocked", page === "blocked");
 
+    applyWallpaper();
     stripPlaceholder();
     settle();
 
