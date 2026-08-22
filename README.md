@@ -19,8 +19,9 @@ arama sonuclari** kalir.
 | Arama gecmisi ve otomatik tamamlama onerileri (dropdown) | |
 | Reklamlar, promosyon balonlari, bitis ekrani kartlari | |
 
-Kutuya tiklandiginda gorunum sabit kalir: odak halindeki mavi cerceve, golge
-ve solda beliren ikinci buyutec ikonu bastirilir; kutu ne buyur ne kayar.
+Kutuya tiklandiginda YouTube'un mavi odak cercevesi ezilir ve yerine
+**kirmizi** bir cerceve + yumusak hale gelir. Sadece renk ve golge degistigi
+icin kutu ne buyur ne kayar.
 
 Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
 ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
@@ -64,9 +65,13 @@ ytd-masthead #avatar-btn { display: block !important; }
 **Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
 tamamlama onerileri" blogunu silin.
 
-**Kutuyu tamamen cercevesiz yapmak** icin 1. bolumdeki odak blogunda
-`border-color` degerini `transparent` yapin (boyut degismez, cunku
-`border-width`'e dokunulmuyor).
+**Odak renginin tonunu degistirmek** icin `content.css` 1. bolumdeki
+`--ymin-focus-red` (ve halesi icin `--ymin-focus-glow`) degiskenlerini
+duzenleyin; ornegin `#ff0033` daha yumusak bir YouTube kirmizisidir.
+
+**Odak cercevesini tamamen kaldirmak** icin ayni bolumdeki "Odakli hal"
+kuralini silin. Boyutlar her iki durumda da degismez, cunku `border-width`,
+`padding` ve `width/height` degerlerine hic dokunulmuyor.
 
 **Placeholder'i geri getirmek** icin `content.js` icindeki
 `stripPlaceholder()` cagrilarini kaldirin.
