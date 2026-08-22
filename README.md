@@ -1,4 +1,6 @@
-# YouTube Minimalist Search
+# Curious YouTube
+
+> Watch what you're curious about, not the algorithm's dictate.
 
 YouTube'u bir arama motoruna indirgeyen Chrome eklentisi (Manifest V3).
 Hesabinizdan cikis yapmadan, ana sayfa akisi / sol menu / oneriler / Shorts
@@ -86,7 +88,7 @@ secici en kotu ihtimalle bu iki ozelligi devre disi birakir, sizi bos ekranda
 birakmaz. Boyle bir durumda DevTools konsolunda su uyari gorunur:
 
 ```
-[YouTube Minimalist Search] Arama kutusu gorunmuyor; oneri gizleme ve
+[Curious YouTube] Arama kutusu gorunmuyor; oneri gizleme ve
 ortalama kurallari bu sekmede devre disi birakildi.
 ```
 

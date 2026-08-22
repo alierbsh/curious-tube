@@ -1,5 +1,5 @@
 /**
- * YouTube Minimalist Search — content script
+ * Curious YouTube — content script
  *
  * CSS statik gizlemeyi yapar; bu dosya CSS'in tek basina cozemedigi
  * dort isi ustlenir:
@@ -106,7 +106,7 @@
 
     root.classList.add("ymin-safe");
     console.warn(
-      "[YouTube Minimalist Search] Arama kutusu gorunmuyor; oneri gizleme ve " +
+      "[Curious YouTube] Arama kutusu gorunmuyor; oneri gizleme ve " +
         "ortalama kurallari bu sekmede devre disi birakildi."
     );
   }
