@@ -70,7 +70,8 @@ sadece hesap arayuzu gorunmez olur.
 | `logo.png` | Arama modunda cubugun ustunde gosterilen logo. `web_accessible_resources` icinde tanimlidir. |
 | `settings-ui.js` | Sag ust kosedeki disli butonu ve ayarlar paneli (duvar kagidi izgarasi + karisik mod anahtari). |
 | `wallpapers/` | Duvar kagitlari (`wallpaper-1..9`). `manifest.json` icinde `web_accessible_resources: ["wallpapers/*"]` olarak tanimlidir; adresleri calisma aninda `chrome.runtime.getURL` ile alinir. |
-| `icons/generate_icons.py` | Ikonlari yeniden uretir: `python3 icons/generate_icons.py` |
+| `small-logo.png` | Ikonlarin kaynak gorseli (yalnizca uretim zamani; eklenti calisirken kullanilmaz). |
+| `icons/generate_icons.py` | `small-logo.png`'yi okuyup 16/48/128 px ikonlari uretir: `python3 icons/generate_icons.py` |
 
 ## Ozellestirme
 
@@ -88,6 +89,11 @@ ytd-masthead #avatar-btn { display: block !important; }
 
 **Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
 tamamlama onerileri" blogunu silin.
+
+**Eklenti ikonunu degistirmek** icin kok dizindeki `small-logo.png` dosyasini
+degistirip `python3 icons/generate_icons.py` calistirin. Script kare olmayan
+kaynaklari once merkezden kare kirpar (sikistirip ezmez) ve alan agirlikli
+ortalamayla kucultur. Bagimlilik gerekmez.
 
 **Logoyu degistirmek** icin kok dizindeki `logo.png` dosyasini degistirin.
 Boyutlar `content.css` 9.1 bolumunde: buyuk logo `max-height`, ust bardaki
