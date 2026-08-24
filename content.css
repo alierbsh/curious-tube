@@ -675,44 +675,46 @@ html.ymin-on #ymin-home-link {
    miniplayer) sit in the low thousands. The values here are far above both
    so the button can never be buried. */
 
-/* --- Gear button: always present, on every route ----------------------- */
+/* --- Gear button: bottom-right, on every route, in every state ---------
+   One position and one size, whether the extension is on or off. The button
+   is a fixed landmark: the user learns where it is once, and it is still
+   there after the master switch turns everything else off. Anchoring it to
+   the state it controls would make it move exactly when it is needed most.
+
+   The bottom-right corner is also the only corner YouTube never claims on
+   any route — the masthead owns the top, the guide owns the left. */
 
 .ymin-gear {
   position: fixed !important;
-  top: 20px !important;
-  right: 24px !important;
-  bottom: auto !important;
+  top: auto !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  left: auto !important;
   z-index: 99999 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 40px !important;
-  height: 40px !important;
+  width: 52px !important;
+  height: 52px !important;
   padding: 0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
   border-radius: 50% !important;
-  background: rgba(20, 20, 20, 0.55) !important;
-  color: rgba(255, 255, 255, 0.75) !important;
+  /* Opaque enough to read against YouTube's light theme too, since the
+     button has to be findable while the extension is off. */
+  background: rgba(20, 20, 20, 0.82) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
   cursor: pointer !important;
-  opacity: 0.55;
+  opacity: 0.8;
   backdrop-filter: blur(8px);
   transition: opacity 160ms ease, transform 220ms ease, color 160ms ease;
 }
 
-/* With the extension off, YouTube's own masthead is intact and owns the
-   top-right corner (account avatar, notifications, create button), so the
-   gear drops to the bottom-right instead of sitting on top of them. With the
-   extension on, section 3 hides #end on every route, so the corner is free
-   and the gear stays where it was designed to be. */
-html:not(.ymin-on) .ymin-gear {
-  top: auto !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  /* In this state the button is the only way back, and it sits on top of
-     YouTube's own (possibly light) theme, so it stops being subtle. */
-  opacity: 0.92;
-  background: rgba(20, 20, 20, 0.85) !important;
-  color: #ffffff !important;
+/* The inline width/height on the <svg> is a fallback; the real size is set
+   here so the icon scales with the button. */
+.ymin-gear svg {
+  width: 26px !important;
+  height: 26px !important;
 }
 
 .ymin-gear:hover,
