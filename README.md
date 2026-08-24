@@ -53,7 +53,7 @@ sadece hesap arayuzu gorunmez olur.
 | `manifest.json` | MV3 tanimi; yalnizca `www.youtube.com` ve `m.youtube.com` icin izin ister. Ekstra izin (storage, tabs vb.) yoktur. |
 | `content.css` | Asil gizleme katmani. `document_start` ile enjekte edildigi icin sayfa hic titremez. |
 | `content.js` | SPA rota takibi, Shorts yonlendirmesi, placeholder temizligi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
-| `wallpaper.png` | Sayfanin arka plan gorseli. `manifest.json` icinde `web_accessible_resources` olarak tanimlidir; adresi calisma aninda `chrome.runtime.getURL` ile alinir. |
+| `wallpapers/wallpaper-1.png` | Sayfanin arka plan gorseli. `manifest.json` icinde `web_accessible_resources` olarak tanimlidir; adresi calisma aninda `chrome.runtime.getURL` ile alinir. |
 | `icons/generate_icons.py` | Ikonlari yeniden uretir: `python3 icons/generate_icons.py` |
 
 ## Ozellestirme
@@ -73,8 +73,10 @@ ytd-masthead #avatar-btn { display: block !important; }
 **Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
 tamamlama onerileri" blogunu silin.
 
-**Arka plan gorselini degistirmek** icin kok dizindeki `wallpaper.png`
+**Arka plan gorselini degistirmek** icin `wallpapers/wallpaper-1.png`
 dosyasini degistirin (ayni ad korunursa baska hicbir yere dokunmak gerekmez).
+Yeni bir dosya eklerseniz `manifest.json` icindeki `web_accessible_resources`
+listesine de eklenmesi gerekir.
 Yerlesim `content.css` 8. bolumdeki `background-size / position / attachment`
 degerlerinden ayarlanir. Mevcut degerler (`max(130%, 190vh)` + `center 15%`)
 bu gorsele ozeldir: ortasindaki yazi bandi, ekranin ortasindaki arama

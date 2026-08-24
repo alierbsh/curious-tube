@@ -387,7 +387,7 @@ tp-yt-iron-overlay-backdrop[opened] {
    ---------------------------------------------------------------------
    Gorselin adresi content.js tarafindan --ymin-wallpaper degiskenine
    yaziliyor (chrome.runtime.getURL + manifest'teki web_accessible_resources).
-   CSS icinden dogrudan url("wallpaper.png") yazilamaz: o yol eklenti koku
+   CSS icinden dogrudan url("wallpapers/...") yazilamaz: o yol eklenti koku
    yerine YouTube sayfasina gore cozulur ve dosya bulunamaz.
 
    Butun kurallar JS'in ekledigi .ymin-wallpaper sinifina bagli; gorsel

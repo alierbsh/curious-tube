@@ -43,6 +43,9 @@
     "ytd-statement-banner-renderer",
   ].join(",");
 
+  /** Arka plan gorseli (manifest'te web_accessible_resources olarak tanimli). */
+  const WALLPAPER = "wallpapers/wallpaper-1.png";
+
   /** Arama girdisi: eski ve yeni ust bar bilesenlerinin ikisini de kapsar. */
   const SEARCH_INPUT =
     "input#search, input.ytSearchboxComponentInput, input[name='search_query']";
@@ -121,7 +124,7 @@
   /**
    * Sayfanin arka plan gorselini CSS'e aktarir.
    *
-   * content.css icinden dogrudan url("wallpaper.png") yazilamaz: o yol
+   * content.css icinden dogrudan url("wallpapers/...") yazilamaz: o yol
    * eklenti koku yerine sayfaya gore cozulur. Dosyanin gercek adresi
    * yalnizca chrome.runtime.getURL ile bilinir (ve manifest'teki
    * web_accessible_resources sayesinde sayfadan yuklenebilir). Adresi
@@ -130,7 +133,7 @@
    */
   function applyWallpaper() {
     try {
-      const url = chrome.runtime.getURL("wallpaper.png");
+      const url = chrome.runtime.getURL(WALLPAPER);
       if (!url) return;
       root.style.setProperty("--ymin-wallpaper", 'url("' + url + '")');
       root.classList.add("ymin-wallpaper");
