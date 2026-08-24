@@ -9,3 +9,6 @@
 *.zip
 *.crx
 *.pem
+
+# Upscayl gecici ciktilari
+wallpapers/.temp-*

@@ -43,8 +43,51 @@
     "ytd-statement-banner-renderer",
   ].join(",");
 
-  /** Arka plan gorseli (manifest'te web_accessible_resources olarak tanimli). */
-  const WALLPAPER = "wallpapers/wallpaper-1.png";
+  /**
+   * Duvar kagidi katalogu. Yeni gorsel eklemek icin wallpapers/ klasorune
+   * dosyayi atip buraya bir satir eklemek yeterli; manifest'teki
+   * web_accessible_resources zaten "wallpapers/*" jokerini kullaniyor.
+   *
+   * size / position istege baglidir. Gorsellerin kompozisyonu farkli oldugu
+   * icin her biri icin ayri kirpma verilebilir; verilmezse CSS'teki
+   * varsayilan (cover / center) gecerli olur. 1 numarali gorselin tam
+   * ortasinda beyaz bir yazi bandi var, bu yuzden buyutulup asagi kaydirilir
+   * (yoksa bant arama cubugunun arkasina denk geliyor).
+   */
+  const WALLPAPERS = [
+    {
+      file: "wallpapers/wallpaper-1.png",
+      label: "Duvar kagidi 1",
+      size: "max(130%, 190vh)",
+      position: "center 15%",
+    },
+    { file: "wallpapers/wallpaper-2.jpg", label: "Duvar kagidi 2" },
+    { file: "wallpapers/wallpaper-3.jpg", label: "Duvar kagidi 3" },
+    { file: "wallpapers/wallpaper-4.jpg", label: "Duvar kagidi 4" },
+    { file: "wallpapers/wallpaper-5.jpg", label: "Duvar kagidi 5" },
+    { file: "wallpapers/wallpaper-6.jpg", label: "Duvar kagidi 6" },
+    { file: "wallpapers/wallpaper-7.jpg", label: "Duvar kagidi 7" },
+    { file: "wallpapers/wallpaper-8.jpg", label: "Duvar kagidi 8" },
+    { file: "wallpapers/wallpaper-9.jpg", label: "Duvar kagidi 9" },
+  ];
+
+  /** chrome.storage.local anahtarlari. */
+  const KEY_SELECTED = "selectedWallpaper";
+  const KEY_SHUFFLE = "shuffleWallpaper";
+
+  /**
+   * Tercihlerin sayfa yerel kopyasi. chrome.storage ASENKRON oldugu icin
+   * ilk boyama sirasinda deger elimizde olmaz ve duvar kagidi bir an
+   * yanlis/bos gorunur. Bunu onlemek icin son bilinen tercihi sayfanin
+   * localStorage'inda da tutuyoruz: document_start'ta senkron okunur,
+   * gercek deger gelince sessizce guncellenir.
+   */
+  const CACHE_KEY = "ymin:prefs";
+
+  const DEFAULT_PREFS = {
+    [KEY_SELECTED]: WALLPAPERS[0].file,
+    [KEY_SHUFFLE]: false,
+  };
 
   /** Arama girdisi: eski ve yeni ust bar bilesenlerinin ikisini de kapsar. */
   const SEARCH_INPUT =
@@ -54,6 +97,24 @@
 
   /** Girdinin placeholder niteligini izleyen gozlemci (stripPlaceholder). */
   let placeholderObserver = null;
+
+  /** Yururlukteki tercihler ve o an ekranda olan duvar kagidi. */
+  let prefs = Object.assign({}, DEFAULT_PREFS);
+  let appliedFile = null;
+
+  /** Tercih degisince haberdar olacaklar (ayarlar arayuzu). */
+  const prefListeners = [];
+
+  function notify() {
+    const snapshot = Object.assign({}, prefs);
+    prefListeners.forEach((fn) => {
+      try {
+        fn(snapshot);
+      } catch (_) {
+        /* bir dinleyicinin hatasi digerlerini durdurmasin */
+      }
+    });
+  }
 
   /* ------------------------------------------------------------------ */
   /* Rota                                                                */
@@ -131,16 +192,115 @@
    * --ymin-wallpaper degiskenine yazip bicimlendirmeyi (cover, fixed, ...)
    * CSS'e birakiyoruz.
    */
-  function applyWallpaper() {
+  function applyWallpaperFile(file) {
+    const entry = entryFor(file);
     try {
-      const url = chrome.runtime.getURL(WALLPAPER);
+      const url = chrome.runtime.getURL(entry.file);
       if (!url) return;
       root.style.setProperty("--ymin-wallpaper", 'url("' + url + '")');
+      root.style.setProperty("--ymin-wallpaper-size", entry.size || "cover");
+      root.style.setProperty(
+        "--ymin-wallpaper-position",
+        entry.position || "center"
+      );
       root.classList.add("ymin-wallpaper");
+      appliedFile = entry.file;
     } catch (_) {
       // Eklenti yeniden yuklendiginde eski sekmelerde runtime baglami duser;
       // bu durumda gorseli hic uygulamayip stok gorunumde kaliriz.
       root.classList.remove("ymin-wallpaper");
+    }
+  }
+
+  /** Katalogda olmayan bir dosya adi gelirse ilk gorsele duseriz. */
+  function entryFor(file) {
+    return WALLPAPERS.find((w) => w.file === file) || WALLPAPERS[0];
+  }
+
+  /** Karisik mod: mumkunse su an ekranda olandan farkli birini sec. */
+  function randomFile() {
+    const pool = WALLPAPERS.filter((w) => w.file !== appliedFile);
+    const list = pool.length ? pool : WALLPAPERS;
+    return list[Math.floor(Math.random() * list.length)].file;
+  }
+
+  /** Tercihlere gore hangi dosyanin gosterilecegi. */
+  function resolveFile() {
+    return prefs[KEY_SHUFFLE] ? randomFile() : prefs[KEY_SELECTED];
+  }
+
+  /* ---- Tercihler: localStorage (senkron onbellek) + chrome.storage ---- */
+
+  function readCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      return raw ? Object.assign({}, DEFAULT_PREFS, JSON.parse(raw)) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeCache() {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(prefs));
+    } catch (_) {
+      // Ozel pencerede veya depolama kapaliysa onbellek olmadan devam.
+    }
+  }
+
+  /** UI'in tercih yazmasi icin: hem onbellege hem chrome.storage'a. */
+  function setPrefs(patch) {
+    prefs = Object.assign({}, prefs, patch);
+    writeCache();
+    try {
+      chrome.storage.local.set(patch);
+    } catch (_) {
+      /* baglam dustuyse yalnizca bu sekmede gecerli olur */
+    }
+    return Object.assign({}, prefs);
+  }
+
+  /**
+   * Ilk uygulama: once onbellekten (senkron, titremesiz), sonra
+   * chrome.storage'daki gercek degerle uzlastirma.
+   */
+  function initWallpaper() {
+    prefs = readCache() || Object.assign({}, DEFAULT_PREFS);
+    applyWallpaperFile(resolveFile());
+
+    try {
+      chrome.storage.local.get([KEY_SELECTED, KEY_SHUFFLE], (stored) => {
+        if (chrome.runtime.lastError || !stored) return;
+        const wasShuffle = prefs[KEY_SHUFFLE];
+        prefs = Object.assign({}, DEFAULT_PREFS, prefs, stored);
+        writeCache();
+
+        // Karisik mod acik kaldiysa zaten rastgele bir gorsel uyguladik;
+        // ikinci kez cekmek gozle gorulur bir sicrama yaratirdi.
+        const shuffleChanged = prefs[KEY_SHUFFLE] !== wasShuffle;
+        const staleFixed =
+          !prefs[KEY_SHUFFLE] && appliedFile !== prefs[KEY_SELECTED];
+        if (shuffleChanged || staleFixed) applyWallpaperFile(resolveFile());
+        notify();
+      });
+
+      // Baska bir sekmede degistirilirse burasi da guncellensin.
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== "local") return;
+        let touched = false;
+        for (const key of [KEY_SELECTED, KEY_SHUFFLE]) {
+          if (key in changes) {
+            prefs[key] = changes[key].newValue;
+            touched = true;
+          }
+        }
+        if (!touched) return;
+        writeCache();
+        if (!prefs[KEY_SHUFFLE]) applyWallpaperFile(prefs[KEY_SELECTED]);
+        notify();
+      });
+    } catch (_) {
+      /* storage izni yoksa veya baglam dustuyse onbellekle devam */
     }
   }
 
@@ -204,6 +364,7 @@
   /* ------------------------------------------------------------------ */
 
   let lastHref = "";
+  let lastPage = null;
 
   function apply() {
     const page = currentPage();
@@ -218,7 +379,13 @@
     root.dataset.yminPage = page;
     root.classList.toggle("ymin-blocked", page === "blocked");
 
-    applyWallpaper();
+    // Karisik mod: her ana sayfaya GIRISTE yeni bir gorsel. Zaten bos
+    // sayfadayken yapilan gezinmeler gorseli degistirmez.
+    if (prefs[KEY_SHUFFLE] && page === "blocked" && lastPage && lastPage !== "blocked") {
+      applyWallpaperFile(randomFile());
+    }
+    lastPage = page;
+
     stripPlaceholder();
     settle();
 
@@ -252,6 +419,26 @@
       subtree: true,
     });
   }
+
+  // Duvar kagidi, rota isaretlerinden once uygulanir ki ilk boyamada
+  // dogru gorsel hazir olsun.
+  initWallpaper();
+
+  /**
+   * Ayarlar arayuzune (settings-ui.js) acilan kucuk yuzey. Icerik betikleri
+   * ayni izole dunyayi paylastigi icin window uzerinden erisilir; sayfanin
+   * kendi JavaScript'i bu nesneyi goremez.
+   */
+  window.__curiousYouTube = {
+    WALLPAPERS,
+    KEY_SELECTED,
+    KEY_SHUFFLE,
+    getPrefs: () => Object.assign({}, prefs),
+    setPrefs,
+    applyWallpaperFile,
+    randomFile,
+    onPrefsChange: (fn) => prefListeners.push(fn),
+  };
 
   // document_start'ta calistigimiz icin <body> henuz olmayabilir.
   apply(); // <html> isaretlerini erken koy: sayfa hic titremesin.

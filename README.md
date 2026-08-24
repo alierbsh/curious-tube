@@ -50,10 +50,11 @@ sadece hesap arayuzu gorunmez olur.
 
 | Dosya | Isi |
 | --- | --- |
-| `manifest.json` | MV3 tanimi; yalnizca `www.youtube.com` ve `m.youtube.com` icin izin ister. Ekstra izin (storage, tabs vb.) yoktur. |
+| `manifest.json` | MV3 tanimi; yalnizca `www.youtube.com` ve `m.youtube.com` icin izin ister. Tek ek izin `storage` (duvar kagidi tercihi icin). |
 | `content.css` | Asil gizleme katmani. `document_start` ile enjekte edildigi icin sayfa hic titremez. |
 | `content.js` | SPA rota takibi, Shorts yonlendirmesi, placeholder temizligi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
-| `wallpapers/wallpaper-1.png` | Sayfanin arka plan gorseli. `manifest.json` icinde `web_accessible_resources` olarak tanimlidir; adresi calisma aninda `chrome.runtime.getURL` ile alinir. |
+| `settings-ui.js` | Sag ust kosedeki disli butonu ve ayarlar paneli (duvar kagidi izgarasi + karisik mod anahtari). |
+| `wallpapers/` | Duvar kagitlari (`wallpaper-1..9`). `manifest.json` icinde `web_accessible_resources: ["wallpapers/*"]` olarak tanimlidir; adresleri calisma aninda `chrome.runtime.getURL` ile alinir. |
 | `icons/generate_icons.py` | Ikonlari yeniden uretir: `python3 icons/generate_icons.py` |
 
 ## Ozellestirme
@@ -104,6 +105,29 @@ satirini silin.
 
 **Baska bir sayfayi da bosaltmak** icin `content.js` icindeki
 `BLOCKED_PATHS` kumesine yolu ekleyin (ornek: `"/feed/history"`).
+
+## Ayarlar paneli
+
+Bos sayfada sag ust kosede bir disli butonu belirir; panel iki bolumden olusur:
+
+- **Wallpapers** — `wallpapers/` klasorundeki gorseller izgara halinde listelenir.
+  Birine tiklandiginda arka plan aninda degisir ve secim
+  `chrome.storage.local` icinde `selectedWallpaper` olarak saklanir.
+- **Settings** — "Karisik Duvar Kagidi" anahtari. Acikken ana sayfa her
+  acildiginda rastgele bir gorsel gosterilir; deger `shuffleWallpaper`
+  anahtarinda tutulur.
+
+Tercih iki yerde tutulur: dogrusu `chrome.storage.local`, yani sekmeler ve
+oturumlar arasinda ortaktir. Ayrica sayfanin `localStorage`'inda
+(`ymin:prefs`) senkron okunabilen bir kopyasi vardir; `chrome.storage`
+asenkron oldugu icin ilk boyamada duvar kagidinin bir an yanlis gorunmesini
+bu onbellek engeller.
+
+**Yeni duvar kagidi eklemek:** dosyayi `wallpapers/` klasorune atin ve
+`content.js` icindeki `WALLPAPERS` dizisine bir satir ekleyin. Manifest'e
+dokunmaya gerek yoktur (`wallpapers/*` jokeri zaten tanimli). Gorselin
+kompozisyonu ozel bir kirpma istiyorsa satira `size` ve `position`
+ekleyebilirsiniz; verilmezse `cover` / `center` kullanilir.
 
 ## Sorun giderme
 

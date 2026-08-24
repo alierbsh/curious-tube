@@ -409,8 +409,11 @@ tp-yt-iron-overlay-backdrop[opened] {
 
 html.ymin-wallpaper {
   background-image: var(--ymin-wallpaper) !important;
-  background-size: max(130%, 190vh) !important;
-  background-position: center 15% !important;
+  /* Her duvar kagidinin kompozisyonu farkli; degerleri content.js gorsel
+     basina --ymin-wallpaper-size / -position degiskenlerine yaziyor.
+     Katalogda deger verilmemisse asagidaki varsayilanlar gecerli olur. */
+  background-size: var(--ymin-wallpaper-size, cover) !important;
+  background-position: var(--ymin-wallpaper-position, center) !important;
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
 }
@@ -459,4 +462,327 @@ ytm-item-section-renderer:has(ytm-shorts-lockup-view-model),
 ytm-watch-next-secondary-results-renderer,
 ytm-comments-entry-point-header-renderer {
   display: none !important;
+}
+
+
+/* ---------------------------------------------------------------------
+   10) AYARLAR ARAYUZU — disli butonu ve cekmece panel
+   ---------------------------------------------------------------------
+   Yapi settings-ui.js icinde kurulur; burada yalnizca gorunum var.
+   Butun secicilerde ymin- oneki kullanilir ve kritik ozellikler
+   !important'tir: YouTube'un genel button/svg kurallari panele sizmasin.
+
+   z-index: bos sayfada ust bar 9999'a cikiyor (3. bolum), panel onun da
+   ustunde durmali. */
+
+/* --- Disli butonu: yalnizca bos sayfada ------------------------------- */
+
+.ymin-gear {
+  position: fixed !important;
+  top: 20px !important;
+  right: 24px !important;
+  z-index: 10000 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 50% !important;
+  background: rgba(20, 20, 20, 0.55) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  cursor: pointer !important;
+  opacity: 0.55;
+  backdrop-filter: blur(8px);
+  transition: opacity 160ms ease, transform 220ms ease, color 160ms ease;
+}
+
+html.ymin-blocked .ymin-gear {
+  display: flex !important;
+}
+
+.ymin-gear:hover,
+.ymin-gear:focus-visible {
+  opacity: 1;
+  color: #ffffff !important;
+  transform: rotate(30deg);
+  outline: none !important;
+}
+
+/* --- Panelin arkasindaki karartma ------------------------------------- */
+
+.ymin-scrim {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10001 !important;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.ymin-scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- Cekmece panel ---------------------------------------------------- */
+
+.ymin-panel {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  z-index: 10002 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 380px !important;
+  max-width: calc(100vw - 32px) !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  background: rgba(23, 23, 23, 0.96) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55) !important;
+  color: #f1f1f1 !important;
+  font-family: "Roboto", "Arial", sans-serif !important;
+  backdrop-filter: blur(18px);
+  opacity: 0;
+  transform: translateX(24px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.ymin-panel.is-open {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ymin-gear,
+  .ymin-scrim,
+  .ymin-panel {
+    transition: none !important;
+  }
+}
+
+/* --- Baslik ----------------------------------------------------------- */
+
+.ymin-panel-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 18px 20px 12px !important;
+}
+
+.ymin-panel-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+}
+
+.ymin-icon-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.ymin-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+/* --- Sekmeler --------------------------------------------------------- */
+
+.ymin-tabs {
+  display: flex !important;
+  gap: 4px !important;
+  margin: 0 16px 4px !important;
+  padding: 4px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.ymin-tab {
+  flex: 1 !important;
+  padding: 7px 10px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.ymin-tab:hover {
+  color: #ffffff !important;
+}
+
+.ymin-tab.is-active {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+/* --- Bolumler --------------------------------------------------------- */
+
+.ymin-pane {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding: 12px 16px 18px !important;
+  overflow-y: auto !important;
+}
+
+.ymin-pane[hidden] {
+  display: none !important;
+}
+
+.ymin-note {
+  margin: 0 0 12px !important;
+  padding: 9px 11px !important;
+  border-left: 2px solid var(--ymin-focus-red, #ff0000) !important;
+  border-radius: 6px !important;
+  background: rgba(255, 0, 0, 0.08) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.ymin-note[hidden] {
+  display: none !important;
+}
+
+/* --- Duvar kagidi izgarasi -------------------------------------------- */
+
+.ymin-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important;
+}
+
+.ymin-tile {
+  position: relative !important;
+  display: block !important;
+  aspect-ratio: 16 / 10;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  outline: 2px solid transparent !important;
+  outline-offset: 2px !important;
+  transition: outline-color 160ms ease, transform 160ms ease;
+}
+
+.ymin-tile:hover {
+  transform: translateY(-2px);
+}
+
+.ymin-tile:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.ymin-tile.is-selected {
+  outline-color: var(--ymin-focus-red, #ff0000) !important;
+}
+
+.ymin-thumb {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.ymin-tile-check {
+  position: absolute !important;
+  top: 6px !important;
+  right: 6px !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  background: var(--ymin-focus-red, #ff0000) !important;
+  color: #ffffff !important;
+}
+
+.ymin-tile.is-selected .ymin-tile-check {
+  display: flex !important;
+}
+
+/* --- Ayar satiri ve anahtar ------------------------------------------- */
+
+.ymin-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 12px 0 !important;
+}
+
+.ymin-row-label {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.ymin-row-title {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.ymin-row-sub {
+  margin-top: 3px !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.ymin-switch {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  width: 44px !important;
+  height: 26px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 13px !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  cursor: pointer !important;
+  transition: background 180ms ease;
+}
+
+.ymin-switch.is-on {
+  background: var(--ymin-focus-red, #ff0000) !important;
+}
+
+.ymin-knob {
+  position: absolute !important;
+  top: 3px !important;
+  left: 3px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  transition: transform 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.ymin-switch.is-on .ymin-knob {
+  transform: translateX(18px);
 }
