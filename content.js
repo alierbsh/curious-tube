@@ -1,26 +1,25 @@
 /**
  * Curious YouTube — content script
  *
- * CSS statik gizlemeyi yapar; bu dosya CSS'in tek basina cozemedigi
- * dort isi ustlenir:
- *   1) Rota takibi  — YouTube bir SPA oldugu icin sayfa degisimi
- *                     yeniden yukleme uretmez; <html> uzerindeki
- *                     isaretleri her gezinmede guncelleriz.
- *   2) Yonlendirme  — /shorts/<id> adresleri normal oynaticiya tasinir.
- *   3) Temizlik     — sonradan DOM'a enjekte edilen raf/reklam/promosyon
- *                     dugumleri gorulur gorulmez kaldirilir.
- *   4) Emniyet      — arama kutusu gorunmuyorsa eklentinin riskli kurallari
- *                     otomatik devre disi birakilir (bkz. ensureSearchVisible).
- *   5) Varlik       — sayfanin arka plan gorseli ve logolar; eklenti ici
- *                     adresler ancak calisma aninda bilindigi icin buradan
- *                     yazilir (bkz. applyWallpaperRef, renderLogo,
- *                     renderNavLogo).
+ * The CSS does the static hiding; this file covers the five jobs CSS cannot
+ * do on its own:
+ *   1) Routing    — YouTube is an SPA, so navigation never reloads the
+ *                   document; we refresh the markers on <html> on every
+ *                   navigation instead.
+ *   2) Redirects  — /shorts/<id> URLs are moved to the regular player.
+ *   3) Cleanup    — shelf/ad/promo nodes injected later are removed as soon
+ *                   as they appear.
+ *   4) Safety     — if the search box is not visible, the extension's risky
+ *                   rules disable themselves (see ensureSearchVisible).
+ *   5) Assets     — the page background and the logos; their in-extension
+ *                   URLs are only known at runtime, so they are written from
+ *                   here (see applyWallpaperRef, renderLogo, renderNavLogo).
  */
 
 (() => {
   "use strict";
 
-  /** Icerigi tamamen bosaltilacak rotalar (ana sayfa, akislar, kesfet). */
+  /** Routes whose content is emptied entirely (home, feeds, explore). */
   const BLOCKED_PATHS = new Set([
     "/",
     "/feed/subscriptions",
@@ -30,7 +29,7 @@
     "/gaming",
   ]);
 
-  /** Sonradan enjekte edilen ve dogrudan DOM'dan silinen dugumler. */
+  /** Nodes injected later that are removed from the DOM outright. */
   const KILL_SELECTORS = [
     "ytd-reel-shelf-renderer",
     "ytd-rich-shelf-renderer[is-shorts]",
@@ -45,60 +44,60 @@
   ].join(",");
 
   /**
-   * Duvar kagidi katalogu. Yeni gorsel eklemek icin wallpapers/ klasorune
-   * dosyayi atip buraya bir satir eklemek yeterli; manifest'teki
-   * web_accessible_resources zaten "wallpapers/*" jokerini kullaniyor.
+   * Wallpaper catalog. To add an image, drop the file into wallpapers/ and
+   * add one line here; the manifest already uses the "wallpapers/*" wildcard
+   * in web_accessible_resources.
    *
-   * size / position istege baglidir. Gorsellerin kompozisyonu farkli oldugu
-   * icin her biri icin ayri kirpma verilebilir; verilmezse CSS'teki
-   * varsayilan (cover / center) gecerli olur. 1 numarali gorselin tam
-   * ortasinda beyaz bir yazi bandi var, bu yuzden buyutulup asagi kaydirilir
-   * (yoksa bant arama cubugunun arkasina denk geliyor).
+   * size / position are optional. The images differ in composition, so each
+   * one may define its own framing; without them the CSS defaults (cover /
+   * center) apply. Wallpaper 1 carries a white caption band across its
+   * middle, so it is scaled up and shifted down — otherwise the band lands
+   * right behind the search bar.
    */
   const WALLPAPERS = [
     {
       file: "wallpapers/wallpaper-1.png",
-      label: "Duvar kagidi 1",
+      label: "Wallpaper 1",
       size: "max(130%, 190vh)",
       position: "center 15%",
     },
-    { file: "wallpapers/wallpaper-2.jpg", label: "Duvar kagidi 2" },
-    { file: "wallpapers/wallpaper-3.jpg", label: "Duvar kagidi 3" },
-    { file: "wallpapers/wallpaper-4.jpg", label: "Duvar kagidi 4" },
-    { file: "wallpapers/wallpaper-5.jpg", label: "Duvar kagidi 5" },
-    { file: "wallpapers/wallpaper-6.jpg", label: "Duvar kagidi 6" },
-    { file: "wallpapers/wallpaper-7.jpg", label: "Duvar kagidi 7" },
-    { file: "wallpapers/wallpaper-8.jpg", label: "Duvar kagidi 8" },
-    { file: "wallpapers/wallpaper-9.jpg", label: "Duvar kagidi 9" },
-    { file: "wallpapers/wallpaper-10.jpg", label: "Duvar kagidi 10" },
+    { file: "wallpapers/wallpaper-2.jpg", label: "Wallpaper 2" },
+    { file: "wallpapers/wallpaper-3.jpg", label: "Wallpaper 3" },
+    { file: "wallpapers/wallpaper-4.jpg", label: "Wallpaper 4" },
+    { file: "wallpapers/wallpaper-5.jpg", label: "Wallpaper 5" },
+    { file: "wallpapers/wallpaper-6.jpg", label: "Wallpaper 6" },
+    { file: "wallpapers/wallpaper-7.jpg", label: "Wallpaper 7" },
+    { file: "wallpapers/wallpaper-8.jpg", label: "Wallpaper 8" },
+    { file: "wallpapers/wallpaper-9.jpg", label: "Wallpaper 9" },
+    { file: "wallpapers/wallpaper-10.jpg", label: "Wallpaper 10" },
   ];
 
-  /** Arama modunda cubugun ustunde gosterilen logo. */
+  /** Logo shown above the search bar in search mode. */
   const LOGO = "logo.png";
 
-  /** chrome.storage.local anahtarlari. */
+  /** chrome.storage.local keys. */
   const KEY_SELECTED = "selectedWallpaper";
   const KEY_SHUFFLE = "shuffleWallpaper";
   const KEY_CUSTOM = "customWallpapers";
 
   /**
-   * Kullanicinin yukledigi duvar kagitlari.
+   * Wallpapers uploaded by the user.
    *
-   * Depolama duzeni bilerek ikiye ayrildi:
-   *   customWallpapers      -> yalnizca ust veri dizisi [{id, bytes, addedAt}]
-   *   ymin:custom:<id>      -> o gorselin base64 verisi (ayri anahtar)
+   * The storage layout is deliberately split in two:
+   *   customWallpapers      -> metadata array only [{id, bytes, addedAt}]
+   *   ymin:custom:<id>      -> that image's base64 payload (separate key)
    *
-   * Boylece sayfa acilirken TUM gorseller belleğe alinmiyor; sadece secili
-   * olanin anahtari okunuyor. Hepsi tek bir dizide dursaydi her okuma
-   * megabaytlarca base64'u cozmek zorunda kalirdi.
+   * This way a page load does not pull EVERY image into memory; only the
+   * selected one is read. Keeping them all in a single array would mean
+   * parsing megabytes of base64 on every read.
    */
   const CUSTOM_PREFIX = "custom:";
   const CUSTOM_DATA_PREFIX = "ymin:custom:";
 
-  /** Kota korumasi (7. madde). Degerler muhafazakar secildi. */
+  /** Quota guards. The values are deliberately conservative. */
   const MAX_CUSTOM_COUNT = 12;
-  const MAX_ITEM_BYTES = 3 * 1024 * 1024; // tek gorsel icin tavan
-  const QUOTA_SAFETY_BYTES = 512 * 1024; // depoda daima bos kalacak pay
+  const MAX_ITEM_BYTES = 3 * 1024 * 1024; // per-image ceiling
+  const QUOTA_SAFETY_BYTES = 512 * 1024; // headroom that must always stay free
 
   function isCustomRef(ref) {
     return typeof ref === "string" && ref.startsWith(CUSTOM_PREFIX);
@@ -113,11 +112,11 @@
   }
 
   /**
-   * Tercihlerin sayfa yerel kopyasi. chrome.storage ASENKRON oldugu icin
-   * ilk boyama sirasinda deger elimizde olmaz ve duvar kagidi bir an
-   * yanlis/bos gorunur. Bunu onlemek icin son bilinen tercihi sayfanin
-   * localStorage'inda da tutuyoruz: document_start'ta senkron okunur,
-   * gercek deger gelince sessizce guncellenir.
+   * Page-local copy of the preferences. chrome.storage is ASYNCHRONOUS, so
+   * the value is not available during the first paint and the wallpaper
+   * would flash wrong or blank. To avoid that, the last known preference is
+   * mirrored in the page's localStorage: read synchronously at
+   * document_start, then quietly reconciled once the real value arrives.
    */
   const CACHE_KEY = "ymin:prefs";
 
@@ -126,23 +125,23 @@
     [KEY_SHUFFLE]: false,
   };
 
-  /** Arama girdisi: eski ve yeni ust bar bilesenlerinin ikisini de kapsar. */
+  /** Search input: covers both the old and the new masthead components. */
   const SEARCH_INPUT =
     "input#search, input.ytSearchboxComponentInput, input[name='search_query']";
 
   const root = document.documentElement;
 
-  /** Girdinin placeholder niteligini izleyen gozlemci (stripPlaceholder). */
+  /** Observer watching the input's placeholder attribute (stripPlaceholder). */
   let placeholderObserver = null;
 
-  /** Yururlukteki tercihler ve o an ekranda olan duvar kagidi. */
+  /** Current preferences and the wallpaper on screen right now. */
   let prefs = Object.assign({}, DEFAULT_PREFS);
   let appliedRef = null;
 
-  /** Kullanici duvar kagitlarinin ust verisi (base64 burada DEGIL). */
+  /** Metadata for the user wallpapers (the base64 is NOT here). */
   let customIndex = [];
 
-  /** Tercih degisince haberdar olacaklar (ayarlar arayuzu). */
+  /** Subscribers notified when preferences change (the settings UI). */
   const prefListeners = [];
 
   function notify() {
@@ -151,13 +150,13 @@
       try {
         fn(snapshot);
       } catch (_) {
-        /* bir dinleyicinin hatasi digerlerini durdurmasin */
+        /* one listener throwing must not stop the others */
       }
     });
   }
 
   /* ------------------------------------------------------------------ */
-  /* Rota                                                                */
+  /* Routing                                                             */
   /* ------------------------------------------------------------------ */
 
   function currentPage() {
@@ -170,7 +169,7 @@
     return "other";
   }
 
-  /** /shorts/<id> -> /watch?v=<id>: Shorts akisina hic girilmez. */
+  /** /shorts/<id> -> /watch?v=<id>: the Shorts feed is never entered. */
   function redirectShorts() {
     const id = location.pathname.split("/")[2];
     if (!id) return false;
@@ -179,26 +178,26 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Emniyet: arama kutusu her kosulda ekranda kalmali                    */
+  /* Safety: the search box must stay on screen no matter what            */
   /* ------------------------------------------------------------------ */
 
   /**
-   * Arama kutusunun gercekten gorunur oldugunu dogrular. Gizlenmisse ya da
-   * gorunur alanin disina tasmissa <html> uzerine .ymin-safe eklenir; bu
-   * sinif CSS tarafinda oneri gizleme ve ortalama bloklarini komple kapatir.
-   * Boylece hatali bir secici en kotu ihtimalle ozelligi devre disi birakir,
-   * kullaniciyi bos ekranda birakmaz.
+   * Verifies that the search box is genuinely visible. If it is hidden or
+   * pushed outside the viewport, .ymin-safe is added to <html>; that class
+   * switches off both the suggestion-hiding and the centering blocks in the
+   * CSS. So a faulty selector can at worst disable a feature — it can never
+   * leave the user staring at an empty screen.
    */
   function ensureSearchVisible() {
     if (root.classList.contains("ymin-safe")) return;
 
-    // Yanlis alarmi onle: tam ekranda YouTube ust bari kendisi gizler,
-    // gorunmeyen sekmede ise olcum guvenilir degildir.
+    // Avoid false alarms: YouTube hides its own masthead in fullscreen,
+    // and measurements are unreliable in a tab that is not visible.
     if (document.fullscreenElement) return;
     if (document.visibilityState !== "visible") return;
 
     const input = document.querySelector(SEARCH_INPUT);
-    if (!input) return; // Ust bar henuz cizilmedi; sonraki kontrolde bakilir.
+    if (!input) return; // The masthead is not drawn yet; a later check will catch it.
 
     const box = input.getBoundingClientRect();
     const onScreen =
@@ -213,24 +212,24 @@
 
     root.classList.add("ymin-safe");
     console.warn(
-      "[Curious YouTube] Arama kutusu gorunmuyor; oneri gizleme ve " +
-        "ortalama kurallari bu sekmede devre disi birakildi."
+      "[Curious YouTube] The search box is not visible; suggestion hiding " +
+        "and centering have been disabled in this tab."
     );
   }
 
   /* ------------------------------------------------------------------ */
-  /* Arama kutusu                                                        */
+  /* Search box                                                          */
   /* ------------------------------------------------------------------ */
 
   /**
-   * Sayfanin arka plan gorselini CSS'e aktarir.
+   * Hands the page background image over to the CSS.
    *
-   * content.css icinden dogrudan url("wallpapers/...") yazilamaz: o yol
-   * eklenti koku yerine sayfaya gore cozulur. Dosyanin gercek adresi
-   * yalnizca chrome.runtime.getURL ile bilinir (ve manifest'teki
-   * web_accessible_resources sayesinde sayfadan yuklenebilir). Adresi
-   * --ymin-wallpaper degiskenine yazip bicimlendirmeyi (cover, fixed, ...)
-   * CSS'e birakiyoruz.
+   * url("wallpapers/...") cannot be written inside content.css: that path
+   * resolves against the page, not the extension root. The real address is
+   * only known through chrome.runtime.getURL (and is loadable thanks to
+   * web_accessible_resources in the manifest). We write the address into the
+   * --ymin-wallpaper variable and leave the framing (cover, fixed, ...) to
+   * the CSS.
    */
   function setBackground(url, entry) {
     root.style.setProperty("--ymin-wallpaper", 'url("' + url + '")');
@@ -243,12 +242,12 @@
   }
 
   /**
-   * Duvar kagidini uygular. ref iki bicimden biri olabilir:
-   *   "wallpapers/x.jpg" -> eklenti icindeki yerlesik gorsel
-   *   "custom:<id>"      -> kullanicinin yukledigi, storage'daki base64
+   * Applies a wallpaper. ref comes in one of two shapes:
+   *   "wallpapers/x.jpg" -> a built-in image inside the extension
+   *   "custom:<id>"      -> a user upload, base64 in storage
    *
-   * Ozel gorseller storage'dan okunmak zorunda oldugu icin bu yol asenkron;
-   * yerlesikler eskisi gibi aninda uygulanir.
+   * Custom images have to be read from storage, so that path is async;
+   * built-ins are applied immediately as before.
    */
   function applyWallpaperRef(ref) {
     try {
@@ -257,7 +256,7 @@
         chrome.storage.local.get(key).then((res) => {
           const dataUrl = res && res[key];
           if (!dataUrl) {
-            // Veri silinmis ama secim kalmis: yerlesike don.
+            // The data is gone but the selection remained: fall back to a built-in.
             applyWallpaperRef(WALLPAPERS[0].file);
             return;
           }
@@ -273,27 +272,27 @@
       setBackground(url, entry);
       appliedRef = entry.file;
     } catch (_) {
-      // Eklenti yeniden yuklendiginde eski sekmelerde runtime baglami duser;
-      // bu durumda gorseli hic uygulamayip stok gorunumde kaliriz.
+      // Reloading the extension invalidates the runtime context in old tabs;
+      // in that case we apply nothing and leave the page in its stock state.
       root.classList.remove("ymin-wallpaper");
     }
   }
 
   function noop() {}
 
-  /** Katalogda olmayan bir dosya adi gelirse ilk gorsele duseriz. */
+  /** An unknown file name falls back to the first image in the catalog. */
   function entryFor(file) {
     return WALLPAPERS.find((w) => w.file === file) || WALLPAPERS[0];
   }
 
-  /** Karisik havuz: yerlesikler + kullanicinin yukledikleri (6. madde). */
+  /** Shuffle pool: built-ins plus the user's own uploads. */
   function shufflePool() {
     return WALLPAPERS.map((w) => w.file).concat(
       customIndex.map((c) => CUSTOM_PREFIX + c.id)
     );
   }
 
-  /** Karisik mod: mumkunse su an ekranda olandan farkli birini sec. */
+  /** Shuffle: pick something other than what is on screen when possible. */
   function randomRef() {
     const all = shufflePool();
     const pool = all.filter((ref) => ref !== appliedRef);
@@ -301,12 +300,12 @@
     return list[Math.floor(Math.random() * list.length)];
   }
 
-  /** Tercihlere gore hangi gorselin gosterilecegi. */
+  /** Which image the current preferences resolve to. */
   function resolveRef() {
     return prefs[KEY_SHUFFLE] ? randomRef() : prefs[KEY_SELECTED];
   }
 
-  /* ---- Kullanici duvar kagitlari: ekleme / silme / kota --------------- */
+  /* ---- User wallpapers: add / remove / quota ------------------------- */
 
   function quotaLimit() {
     const local = chrome.storage.local;
@@ -314,9 +313,9 @@
   }
 
   /**
-   * Base64 gorseli depoya ekler. Kota asilirsa YAZMADAN once reddeder;
-   * boylece storage yarim kalmis bir kayitla dolmaz. Hata kodlari arayuzde
-   * kullaniciya anlasilir bir mesaja cevrilir.
+   * Adds a base64 image to storage. If the quota would be exceeded it is
+   * rejected BEFORE writing, so storage never fills up with a half-written
+   * record. The error codes are turned into readable messages by the UI.
    */
   function addCustomWallpaper(dataUrl) {
     if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
@@ -358,7 +357,7 @@
       .catch(() => ({ ok: false, error: "storage" }));
   }
 
-  /** Gorseli ve ust verisini siler; secili olan silinirse yerlesike doner. */
+  /** Removes the image and its metadata; a selected one falls back to a built-in. */
   function removeCustomWallpaper(id) {
     const nextIndex = customIndex.filter((c) => c.id !== id);
     const patch = {};
@@ -379,7 +378,7 @@
       .catch(() => ({ ok: false, error: "storage" }));
   }
 
-  /** Arayuzun kucuk resimleri cizebilmesi icin base64 verilerini getirir. */
+  /** Fetches the base64 payloads so the UI can draw thumbnails. */
   function getCustomData(ids) {
     const keys = ids.map((id) => CUSTOM_DATA_PREFIX + id);
     if (!keys.length) return Promise.resolve({});
@@ -392,7 +391,7 @@
     }, () => ({}));
   }
 
-  /** Depoda ne kadar yer kullanildigi (arayuzde gosterilir). */
+  /** How much storage is in use (surfaced in the settings panel). */
   function storageUsage() {
     return chrome.storage.local.getBytesInUse(null).then(
       (used) => ({ used: used, limit: quotaLimit() }),
@@ -401,9 +400,9 @@
   }
 
   /**
-   * Logoyu bir kez <body>'ye ekler. Konumlandirma ve gizleme tamamen CSS'te:
-   * eleman her zaman DOM'da durur, yalnizca .ymin-blocked varken gorunur.
-   * Boylece her gezinmede yeniden olusturmak gerekmez.
+   * Adds the logo to <body> once. Positioning and visibility live entirely
+   * in the CSS: the element always stays in the DOM and is only shown while
+   * .ymin-blocked is set, so it never has to be rebuilt on navigation.
    */
   function renderLogo() {
     if (!document.body || document.getElementById("ymin-logo")) return;
@@ -411,30 +410,30 @@
       const img = document.createElement("img");
       img.id = "ymin-logo";
       img.src = chrome.runtime.getURL(LOGO);
-      img.alt = ""; // Dekoratif: sayfada metin birakmiyoruz.
+      img.alt = ""; // Decorative: the page is kept free of text.
       img.decoding = "async";
       document.body.appendChild(img);
     } catch (_) {
-      // Eklenti baglami dustuyse logo hic eklenmez.
+      // If the extension context is gone, the logo is simply not added.
     }
   }
 
   /**
-   * Ust bardaki YouTube logosunu kendi logomuzla degistirir.
+   * Replaces YouTube's masthead logo with ours.
    *
-   * Onemli olan nasil yaptigi: YouTube'un ana sayfa baglantisini SILMIYORUZ.
-   * O <a href="/"> elemani YouTube'un kendi router'ina baglidir; kaldirip
-   * yerine yenisini koysaydik tiklama tam sayfa yenilemeye duserdi. Bunun
-   * yerine baglantinin icindeki YouTube isaretini CSS ile gizleyip (1. bolum)
-   * kendi <img>'imizi ayni baglantinin icine ekliyoruz. Boylece tiklama
-   * davranisi, SPA gezinmesi ve klavye erisimi oldugu gibi kaliyor.
+   * What matters is how: we do NOT remove YouTube's home link. That
+   * <a href="/"> element is wired into YouTube's own router; replacing it
+   * would downgrade the click to a full page reload. Instead the YouTube
+   * mark inside the link is hidden via CSS (section 1) and our <img> is
+   * appended into the very same link. Click behaviour, SPA navigation and
+   * keyboard access all stay intact.
    *
-   * Baglanti bulunamazsa (YouTube isaretlemesi degisirse) #start icine kendi
-   * baglantimizi kuruyoruz; o da ana sayfaya goturur, sadece tam sayfa
-   * yenilemesiyle.
+   * If the link cannot be found (YouTube changed its markup) we build our
+   * own link inside #start; that also reaches the home page, just with a
+   * full reload.
    */
   function renderNavLogo() {
-    // Attached olmayan dugumu bulmaz: YouTube silmisse yeniden ekleriz.
+    // Does not match a detached node: if YouTube dropped it, we re-add it.
     if (document.getElementById("ymin-nav-logo")) return;
 
     const masthead = document.querySelector("ytd-masthead, #masthead");
@@ -450,7 +449,7 @@
         host = document.createElement("a");
         host.id = "ymin-home-link";
         host.href = "/";
-        host.setAttribute("aria-label", "Ana sayfa");
+        host.setAttribute("aria-label", "Home");
         start.insertBefore(host, start.firstChild);
       }
     }
@@ -459,25 +458,24 @@
       const img = document.createElement("img");
       img.id = "ymin-nav-logo";
       img.src = chrome.runtime.getURL(LOGO);
-      img.alt = "Ana sayfa"; // Baglanti oldugu icin erisilebilir bir ad tasir.
+      img.alt = "Home"; // It sits in a link, so it carries an accessible name.
       img.decoding = "async";
       host.appendChild(img);
     } catch (_) {
-      // Eklenti baglami dustuyse ust bar YouTube'un stok halinde kalir.
+      // If the extension context is gone, the masthead stays in YouTube's stock state.
     }
   }
 
-  /* ---- Tercihler: localStorage (senkron onbellek) + chrome.storage ---- */
+  /* ---- Preferences: localStorage (sync cache) + chrome.storage -------- */
 
   /**
-   * Onbellek yalnizca kucuk degerleri tutar: iki tercih ve kullanici
-   * gorsellerinin KIMLIKLERI. Base64 verisi buraya asla yazilmaz — hem
-   * sayfanin localStorage kotasini yerdi hem de YouTube'un kendi verisiyle
-   * ayni alani paylasiyor.
+   * The cache holds small values only: the two preferences and the IDs of the
+   * user's images. Base64 payloads are never written here — they would eat
+   * the page's localStorage quota and share space with YouTube's own data.
    *
-   * Kimliklerin burada olmasi sart: karisik mod, daha chrome.storage
-   * cevaplamadan (document_start) havuzu kurabilsin diye. Aksi halde ilk
-   * cekiliste yalnizca yerlesik gorseller yarisirdi.
+   * The IDs have to be here: shuffle must be able to build its pool before
+   * chrome.storage answers (at document_start). Without them the first draw
+   * would only ever consider the built-in wallpapers.
    */
   function readCache() {
     try {
@@ -513,32 +511,32 @@
         })
       );
     } catch (_) {
-      // Ozel pencerede veya depolama kapaliysa onbellek olmadan devam.
+      // In a private window, or with storage disabled, continue without a cache.
     }
   }
 
-  /** UI'in tercih yazmasi icin: hem onbellege hem chrome.storage'a. */
+  /** For the UI to persist a preference: into the cache and chrome.storage. */
   function setPrefs(patch) {
     prefs = Object.assign({}, prefs, patch);
     writeCache();
     try {
       chrome.storage.local.set(patch);
     } catch (_) {
-      /* baglam dustuyse yalnizca bu sekmede gecerli olur */
+      /* if the context is gone this only applies to the current tab */
     }
     return Object.assign({}, prefs);
   }
 
   /**
-   * Ilk uygulama: once onbellekten (senkron, titremesiz), sonra
-   * chrome.storage'daki gercek degerle uzlastirma.
+   * First application: from the cache (synchronous, no flash), then
+   * reconciled with the real value from chrome.storage.
    */
   function initWallpaper() {
     prefs = readCache() || Object.assign({}, DEFAULT_PREFS);
 
-    // Ozel gorseller yalnizca storage'da; senkron uygulanamazlar. Onbellek
-    // ozel bir secim gosteriyorsa yerlesik bir gorseli bir anligina gosterip
-    // sonra degistirmek yerine bekleriz (goz alici bir takla olmasin).
+    // Custom images live only in storage and cannot be applied synchronously.
+    // If the cache points at one, we wait rather than flashing a built-in
+    // image first and swapping it a moment later.
     if (!isCustomRef(resolveRef())) applyWallpaperRef(resolveRef());
 
     try {
@@ -552,8 +550,8 @@
         });
         writeCache();
 
-        // Karisik mod acik kaldiysa zaten rastgele bir gorsel uyguladik;
-        // ikinci kez cekmek gozle gorulur bir sicrama yaratirdi.
+        // If shuffle stayed on we already applied a random image; drawing a
+        // second time would produce a visible jump.
         const shuffleChanged = prefs[KEY_SHUFFLE] !== wasShuffle;
         const staleFixed =
           !prefs[KEY_SHUFFLE] && appliedRef !== prefs[KEY_SELECTED];
@@ -563,7 +561,7 @@
         notify();
       }, noop);
 
-      // Baska bir sekmede degistirilirse burasi da guncellensin.
+      // Keep this tab in sync when another one changes a value.
       chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== "local") return;
         let touched = false;
@@ -585,15 +583,15 @@
         notify();
       });
     } catch (_) {
-      /* storage izni yoksa veya baglam dustuyse onbellekle devam */
+      /* no storage permission, or the context is gone: continue from the cache */
     }
   }
 
   /**
-   * Kutunun icindeki stok "Ara" / "Search" metnini siler. YouTube kutuyu
-   * yeniden cizdiginde ya da dil degistiginde placeholder geri gelebildigi
-   * icin, girdinin uzerine sadece bu nitelige bakan bir gozlemci baglanir;
-   * geri yazildigi anda tekrar bosaltilir.
+   * Clears the stock "Search" text inside the box. YouTube can restore the
+   * placeholder when it redraws the box or the language changes, so an
+   * observer watching only that attribute is attached to the input and
+   * clears it again the moment it comes back.
    */
   function stripPlaceholder() {
     const input = document.querySelector(SEARCH_INPUT);
@@ -605,13 +603,13 @@
       placeholderObserver = new MutationObserver((records) => {
         for (const record of records) {
           const el = record.target;
-          // Bos degere geri donus yeni bir kayit uretmez: dongu olusmaz.
+          // Writing the empty value back produces no new record: no loop.
           if (el.getAttribute("placeholder")) el.setAttribute("placeholder", "");
         }
       });
     }
 
-    // Gezinmede girdi elemani yenilenebilir; her seferinde guncel dugume bagla.
+    // Navigation can replace the input element; rebind to the current node.
     placeholderObserver.disconnect();
     placeholderObserver.observe(input, {
       attributes: true,
@@ -619,7 +617,7 @@
     });
   }
 
-  /** Bos sayfada imleci arama kutusuna koy (kullaniciyi rahatsiz etmeden). */
+  /** Put the caret in the search box on the blank page (without nagging). */
   function focusSearch() {
     const input = document.querySelector(SEARCH_INPUT);
     if (!input || input.value) return;
@@ -631,8 +629,8 @@
   }
 
   /**
-   * Ust bar Polymer tarafindan gec cizildigi icin kontrolleri birkac kez,
-   * artan araliklarla tekrarlariz.
+   * Polymer draws the masthead late, so the checks are repeated a few times
+   * at widening intervals.
    */
   function settle() {
     [300, 900, 1800].forEach((delay) =>
@@ -647,7 +645,7 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Uygulama                                                            */
+  /* Application                                                         */
   /* ------------------------------------------------------------------ */
 
   let lastHref = "";
@@ -657,17 +655,17 @@
     const page = currentPage();
     if (page === "shorts" && redirectShorts()) return;
 
-    // Not: burada "URL degismediyse cik" seklinde bir erken donus yok.
-    // document_start'ta <body> henuz olmadigi icin ilk cagri her isi
-    // yapamaz; erken donus, sonraki cagrilarin da bos gecmesine yol aciyordu.
+    // Note: there is no "bail out if the URL did not change" early return.
+    // At document_start <body> does not exist yet, so the first call cannot
+    // do everything; the early return made later calls no-ops as well.
     const navigated = location.href !== lastHref;
     lastHref = location.href;
 
     root.dataset.yminPage = page;
     root.classList.toggle("ymin-blocked", page === "blocked");
 
-    // Karisik mod: her ana sayfaya GIRISTE yeni bir gorsel. Zaten bos
-    // sayfadayken yapilan gezinmeler gorseli degistirmez.
+    // Shuffle: a new image every time the home page is ENTERED. Navigating
+    // around while already on the blank page leaves the wallpaper alone.
     if (prefs[KEY_SHUFFLE] && page === "blocked" && lastPage && lastPage !== "blocked") {
       applyWallpaperRef(randomRef());
     }
@@ -682,7 +680,7 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* DOM temizligi                                                       */
+  /* DOM cleanup                                                         */
   /* ------------------------------------------------------------------ */
 
   function sweep(scope) {
@@ -691,7 +689,7 @@
   }
 
   const observer = new MutationObserver((mutations) => {
-    // Gezinme yeni bir dokuman uretmedigi icin URL'i her turda dogrula.
+    // Navigation does not create a new document, so re-check the URL here.
     if (location.href !== lastHref) apply();
 
     for (const mutation of mutations) {
@@ -709,14 +707,14 @@
     });
   }
 
-  // Duvar kagidi, rota isaretlerinden once uygulanir ki ilk boyamada
-  // dogru gorsel hazir olsun.
+  // The wallpaper is applied before the route markers so the right image
+  // is ready for the very first paint.
   initWallpaper();
 
   /**
-   * Ayarlar arayuzune (settings-ui.js) acilan kucuk yuzey. Icerik betikleri
-   * ayni izole dunyayi paylastigi icin window uzerinden erisilir; sayfanin
-   * kendi JavaScript'i bu nesneyi goremez.
+   * The small surface exposed to the settings UI (settings-ui.js). Content
+   * scripts share one isolated world, so it travels over window; the page's
+   * own JavaScript cannot see this object.
    */
   window.__curiousYouTube = {
     WALLPAPERS,
@@ -741,15 +739,15 @@
     onPrefsChange: (fn) => prefListeners.push(fn),
   };
 
-  // document_start'ta calistigimiz icin <body> henuz olmayabilir.
-  apply(); // <html> isaretlerini erken koy: sayfa hic titremesin.
+  // We run at document_start, so <body> may not exist yet.
+  apply(); // Set the <html> markers early so the page never flickers.
   if (document.body) {
     start();
   } else {
     document.addEventListener("DOMContentLoaded", start, { once: true });
   }
 
-  // YouTube'un kendi gezinme olaylari + tarayici geri/ileri.
+  // YouTube's own navigation events plus browser back/forward.
   window.addEventListener("yt-navigate-start", apply, true);
   window.addEventListener("yt-navigate-finish", apply, true);
   window.addEventListener("yt-page-data-updated", apply, true);

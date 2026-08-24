@@ -1,29 +1,26 @@
 /* =====================================================================
    Curious YouTube
-   YouTube'u bir arama motoruna indirger.
-   Gorunur kalanlar : arama cubugu + arama butonu + arama sonuclari + oynatici
-   Gizlenenler      : ana sayfa akisi, abonelikler, sol menu, oneriler,
-                      Shorts, yorumlar, reklamlar, promosyon balonlari,
-                      arama gecmisi / otomatik tamamlama acilir menusu
-   Arama modunda cubugun hemen ustunde logo.png gosterilir; .ymin-blocked
-   kalkinca gizlenir.
-   Kutuya tiklandiginda YouTube'un mavi cercevesi yerine kirmizi bir odak
-   cercevesi yanar; kutu ne buyur ne kayar.
-   Sayfa zeminine wallpaper.png serilir (adresi content.js'ten
-   --ymin-wallpaper degiskeniyle gelir).
-   Bos sayfada ekranin tam ortasindaki arama cubugu disinda hicbir sey
-   gorunmez (ek metin yok, placeholder da content.js ile bosaltilir);
-   /results ve /watch acildiginda bar standart yerine geri doner.
+   Reduces YouTube to a search engine.
+   Kept visible : search bar + search button + results + the player
+   Hidden       : home feed, subscriptions, guide, recommendations, Shorts,
+                  comments, ads, promo banners, and the search history /
+                  autocomplete dropdown
+   The masthead logo is replaced with logo.png and doubles as a home button;
+   in search mode the same logo also appears above the search bar.
+   Focus paints a red ring instead of YouTube's blue one, and the box neither
+   grows nor shifts.
+   wallpaper images cover the whole page (their URLs arrive from content.js
+   through the --ymin-wallpaper variable).
    ===================================================================== */
 
 /* ---------------------------------------------------------------------
-   1) UST BAR (MASTHEAD) — sadece arama alani kalir
+   1) MASTHEAD — only the search area survives
    --------------------------------------------------------------------- */
 
-/* Sol taraf: hamburger menu butonu ve ulke kodu gider. Logo ALANI kalir —
-   YouTube'un kendi ana sayfa baglantisini silmiyoruz, yalnizca icindeki
-   YouTube isaretini gizleyip yerine kendi logomuzu koyuyoruz (bkz. 9.1).
-   Boylece baglantiya bagli SPA yonlendirme davranisi oldugu gibi calisir. */
+/* Left side: the hamburger button and country code go. The logo SLOT stays —
+   we do not delete YouTube's own home link, we only hide the YouTube mark
+   inside it and drop our logo in its place (see 9.1). That way the SPA
+   navigation bound to that link keeps working exactly as before. */
 ytd-masthead #guide-button,
 #masthead #guide-button,
 ytd-masthead ytd-topbar-logo-renderer #logo-icon,
@@ -33,7 +30,7 @@ ytd-masthead ytd-topbar-logo-renderer #country-code {
   display: none !important;
 }
 
-/* Baglanti kutusu logomuzu kirpmasin (YouTube sabit olcu verebiliyor). */
+/* Do not let the link box clip our logo (YouTube may pin its size). */
 ytd-masthead ytd-topbar-logo-renderer,
 ytd-masthead ytd-topbar-logo-renderer a {
   display: flex !important;
@@ -43,18 +40,18 @@ ytd-masthead ytd-topbar-logo-renderer a {
   overflow: visible !important;
 }
 
-/* Bos sayfada sol taraf tamamen gizlenir: hem buyuk logomuz zaten ekranda
-   (ikisi birbirini ezmesin), hem de gorunur bir #start ortadaki arama
-   cubugunun hizalamasini kaydirirdi. */
+/* On the blank page the whole left side is hidden: our big logo is already
+   on screen (the two must never collide), and a visible #start would throw
+   off the centering of the search bar. */
 html.ymin-blocked ytd-masthead #start.ytd-masthead,
 html.ymin-blocked #masthead #start {
   display: none !important;
 }
 
-/* Icerik sayfalarinda logo solda durur ama AKISIN DISINDA: #container
-   justify-content: center kullandigi icin, yer kaplayan bir #start arama
-   cubugunu kendi genisliginin yarisi kadar saga iterdi. Mutlak konum
-   bunu onler, arama kutusu ekranin tam ortasinda kalir. */
+/* On content pages the logo sits on the left but OUT OF FLOW: #container
+   uses justify-content: center, so a #start that takes up space would push
+   the search bar right by half its width. Absolute positioning avoids that
+   and keeps the box centered in the viewport. */
 ytd-masthead #container.ytd-masthead,
 #masthead #container {
   position: relative !important;
@@ -70,7 +67,7 @@ html:not(.ymin-blocked) #masthead #start {
   align-items: center !important;
 }
 
-/* Dar pencerede logo arama kutusuyla cakismasin. */
+/* On narrow windows the logo must not collide with the search box. */
 @media (max-width: 720px) {
   html:not(.ymin-blocked) ytd-masthead #start.ytd-masthead,
   html:not(.ymin-blocked) #masthead #start {
@@ -78,7 +75,7 @@ html:not(.ymin-blocked) #masthead #start {
   }
 }
 
-/* Sag taraf: olustur, bildirimler, avatar, "uygulamayi indir" vb. */
+/* Right side: create, notifications, avatar, "get the app" and friends. */
 ytd-masthead #end.ytd-masthead,
 ytd-masthead #buttons.ytd-masthead,
 #masthead #end,
@@ -92,7 +89,7 @@ ytd-masthead yt-icon-button#voice-search-button {
   display: none !important;
 }
 
-/* Arama alanini ortala ve nefes alacak genislik ver */
+/* Center the search area and give it room to breathe */
 ytd-masthead #container.ytd-masthead,
 #masthead #container {
   justify-content: center !important;
@@ -107,11 +104,11 @@ ytd-masthead #center.ytd-masthead,
   justify-content: center !important;
 }
 
-/* Arama kutusu ve arama butonu her kosulda gorunur kalsin.
-   NOT: burada eskiden "display: revert !important" vardi; revert, YouTube'un
-   kendi author stilini de geri aldigi icin ozel elemanlari inline'a
-   dusurebiliyordu. Gizleme secicileri artik arama kutusuna hic dokunmadigi
-   icin display'i zorlamiyoruz, sadece gorunurlugu garantiliyoruz. */
+/* The search box and button stay visible under all circumstances.
+   NOTE: this used to say "display: revert !important"; revert also discards
+   YouTube's own author styles, which could drop custom elements to inline.
+   The hiding selectors no longer touch the search box, so we do not force
+   display any more — only visibility is guaranteed. */
 ytd-searchbox,
 yt-searchbox,
 #search-form,
@@ -123,28 +120,28 @@ yt-searchbox,
   visibility: visible !important;
 }
 
-/* --- Odaklanma (focus) gorunumu -----------------------------------------
-   Kutuya tiklandiginda YouTube kenarligi kendi mavisine cevirir. Biz bunu
-   ezip kirmizi bir odak cercevesi gosteriyoruz.
+/* --- Focus appearance ---------------------------------------------------
+   Clicking the box makes YouTube paint its own blue border. We override that
+   and show a red focus ring instead.
 
-   Iki ayri kural var: odaksiz hal notr kenarligi sabitler (mavi hicbir
-   asamada sizamaz), odakli hal kirmiziya gecer. Odak kurali daha yuksek
-   ozgullukte oldugu icin (:focus-within / [has-focus]) sirayla degil,
-   ozgullukle kazanir.
+   There are two separate rules: the unfocused state pins a neutral border
+   (blue can never leak through at any stage) and the focused state switches
+   to red. The focus rule wins on specificity (:focus-within / [has-focus]),
+   not on source order.
 
-   Kayma olmamasi icin SADECE renk ve golge degisir: border-width'e,
-   padding'e, width/height'e dokunulmaz. box-shadow zaten yerlesim
-   uretmez, dolayisiyla halka kutuyu buyutmez veya oynatmaz. Gecis de
-   yalnizca border-color + box-shadow icin tanimli; boyut animasyonu yok.
+   To avoid any shift, ONLY colour and shadow change: border-width, padding
+   and width/height are untouched. box-shadow never affects layout, so the
+   ring cannot grow or move the box. The transition is likewise limited to
+   border-color and box-shadow; nothing animates size.
 
-   Kirmizinin tonunu tek yerden degistirmek icin: --ymin-focus-red. */
+   To change the shade of red in one place: --ymin-focus-red. */
 
 :root {
   --ymin-focus-red: #ff0000;
   --ymin-focus-glow: rgba(255, 0, 0, 0.18);
 }
 
-/* Odaksiz hal: temaya uyan notr kenarlik. */
+/* Unfocused: a neutral border that follows the theme. */
 ytd-masthead #search-form,
 ytd-masthead ytd-searchbox #container.ytd-searchbox,
 ytd-masthead yt-searchbox .ytSearchboxComponentInputBox {
@@ -157,9 +154,9 @@ ytd-masthead yt-searchbox .ytSearchboxComponentInputBox {
   transition: border-color 120ms ease, box-shadow 120ms ease !important;
 }
 
-/* Odakli hal: YouTube'un mavisi yerine kirmizi cerceve + yumusak hale.
-   inset halka, dis halenin bir ust kapsayici tarafindan kirpildigi
-   durumlarda bile kirmizinin gorunmesini garanti eder. */
+/* Focused: red border plus a soft halo instead of YouTube's blue. The inset
+   ring guarantees the red is visible even when an ancestor clips the outer
+   halo. */
 ytd-masthead ytd-searchbox[has-focus] #container.ytd-searchbox,
 ytd-masthead ytd-searchbox #container.ytd-searchbox:focus-within,
 ytd-masthead yt-searchbox .ytSearchboxComponentInputBox:focus-within,
@@ -170,7 +167,7 @@ ytd-masthead #search-form:focus-within {
   outline: none !important;
 }
 
-/* Girdinin kendi odak halkasi (tarayici outline'i dahil) */
+/* The input's own focus ring (including the browser outline) */
 ytd-masthead input#search,
 ytd-masthead input#search:focus,
 ytd-masthead input#search:focus-visible,
@@ -184,11 +181,12 @@ ytd-masthead input[name="search_query"]:focus-visible {
   border-color: transparent !important;
 }
 
-/* Odakta solda beliren ikinci buyutec ikonu. Sagdaki arama BUTONU
-   (#search-icon-legacy / .ytSearchboxComponentSearchButton) bundan
-   etkilenmez: id secicileri birebir eslesir, buton ayri bir dugumdur.
-   Ikon her iki durumda da display:none oldugu icin hic yer kaplamaz;
-   padding/width degerlerine dokunmadan kaymanin kaynagi ortadan kalkar. */
+/* The second magnifier that appears on the left while focused. The search
+   BUTTON on the right (#search-icon-legacy /
+   .ytSearchboxComponentSearchButton) is unaffected: id selectors match
+   exactly and the button is a separate node. The icon is display:none in
+   both states, so it never occupies space — the source of the shift is gone
+   without touching padding or width. */
 ytd-masthead ytd-searchbox #search-icon,
 ytd-masthead #search-icon.ytd-searchbox,
 ytd-masthead yt-searchbox .ytSearchboxComponentSearchIcon,
@@ -196,27 +194,26 @@ ytd-masthead .ytSearchboxComponentInputBox > yt-icon:first-child {
   display: none !important;
 }
 
-/* Ust bardaki ince golgeyi/cizgiyi sadelestir */
+/* Flatten the thin shadow/line under the masthead */
 #masthead-container.ytd-app {
   box-shadow: none !important;
   border-bottom: none !important;
 }
 
-/* --- Arama gecmisi ve otomatik tamamlama onerileri -----------------------
-   Sadece ACILIR LISTENIN KENDISI hedeflenir.
+/* --- Search history and autocomplete suggestions -------------------------
+   Only the DROPDOWN ITSELF is targeted.
 
-   Burada onceden [class*="uggestion"] gibi genis bir joker secici vardi:
-   YouTube'un yeni arama bileseninde arama kutusunun kapsayicisi da
-   "ytSuggestionComponent..." sinifini tasidigi icin joker, oneri listesiyle
-   BIRLIKTE arama kutusunu da gizliyordu (siyah ekran hatasi). Artik yalnizca
-   listeye ait spesifik elemanlar ve ust bar icinde ARIA'da listbox olarak
-   isaretlenen kutu gizleniyor; girdi alaninin kapsayicisi hicbir kosulda
-   eslesmiyor.
+   This block used to carry a broad [class*="uggestion"] wildcard: in
+   YouTube's newer search component the container of the input also carries a
+   "ytSuggestionComponent..." class, so the wildcard hid the search box along
+   with the suggestion list (the black-screen bug). Now only elements that
+   belong to the list are hidden, plus whatever is marked as a listbox in
+   ARIA inside the masthead; the input's container can never match.
 
-   html:not(.ymin-safe) bir emniyet anahtaridir: content.js arama kutusunun
-   gorunmez oldugunu ya da ekran disina tastigi tespit ederse <html> uzerine
-   .ymin-safe ekler ve bu blok tumuyle devre disi kalir. Boylece en kotu
-   ihtimalde oneriler geri gelir, ama arama cubugu asla kaybolmaz. */
+   html:not(.ymin-safe) is a safety switch: if content.js finds the search box
+   invisible or pushed off screen, it adds .ymin-safe to <html> and this whole
+   block goes dormant. Worst case the suggestions come back — the search bar
+   never disappears. */
 html:not(.ymin-safe) ytd-searchbox tp-yt-iron-dropdown,
 html:not(.ymin-safe) yt-searchbox tp-yt-iron-dropdown,
 html:not(.ymin-safe) tp-yt-iron-dropdown.ytd-searchbox,
@@ -233,7 +230,7 @@ html:not(.ymin-safe) .searchbox-suggestions {
 }
 
 /* ---------------------------------------------------------------------
-   2) SOL MENU (GUIDE) — tamamen kaldirilir, icerik sola yaslanir
+   2) GUIDE — removed entirely, content moves to the left edge
    --------------------------------------------------------------------- */
 
 ytd-app #guide,
@@ -251,7 +248,7 @@ tp-yt-app-drawer#guide {
   --app-drawer-width: 0px !important;
 }
 
-/* Menunun birakti bogus bosluklari kapat */
+/* Close the dead space the guide leaves behind */
 ytd-app #page-manager.ytd-app,
 ytd-page-manager#page-manager {
   margin-left: 0 !important;
@@ -262,7 +259,7 @@ ytd-app ytd-mini-guide-renderer + #page-manager {
 }
 
 /* ---------------------------------------------------------------------
-   3) ANA SAYFA / ABONELIKLER / KESFET / TREND — komple bos sayfa
+   3) HOME / SUBSCRIPTIONS / EXPLORE / TRENDING — an entirely blank page
    --------------------------------------------------------------------- */
 
 ytd-browse[page-subtype="home"],
@@ -274,7 +271,7 @@ ytd-browse[page-subtype="storefront"] {
   display: none !important;
 }
 
-/* content.js engellenmis bir rota tespit ettiginde sayfayi tamamen bosaltir */
+/* content.js empties the page completely once it detects a blocked route */
 html.ymin-blocked ytd-page-manager,
 html.ymin-blocked #page-manager,
 html.ymin-blocked ytd-browse,
@@ -282,16 +279,15 @@ html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
   display: none !important;
 }
 
-/* --- Bos sayfada arama cubugu: ekranin tam ortasi (Google gorunumu) ------
-   Yalnizca .ymin-blocked rotalarinda (ana sayfa, abonelikler, kesfet...).
-   Arama yapilinca /results'a gecilir, content.js sinifi kaldirir ve ust bar
-   kendi standart yerine geri doner; arama sonuclari ile izleme sayfasinin
-   duzenine dokunulmaz.
+/* --- Blank page: the search bar sits dead center (a Google-like view) ----
+   Only on .ymin-blocked routes (home, subscriptions, explore...). Running a
+   search moves to /results, content.js drops the class and the masthead
+   returns to its normal spot; the results and watch layouts are untouched.
 
-   Ortalama, ust barin 56px oldugu varsayimina dayanan translateY(50vh - 28px)
-   yerine klasik top/left %50 + translate(-50%, -50%) ile yapiliyor: bar ne
-   kadar yuksek olursa olsun tam ortada kalir, ekran disina tasamaz.
-   z-index, barin her turlu kalintinin ustunde kalmasini garantiler. */
+   Centering uses the classic top/left 50% + translate(-50%, -50%) instead of
+   translateY(50vh - 28px), which assumed the masthead is 56px tall. The bar
+   now stays dead center whatever its height and can never be pushed off
+   screen. z-index guarantees it stays above any leftovers. */
 html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app {
   top: 50% !important;
   left: 50% !important;
@@ -303,7 +299,7 @@ html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app {
   z-index: 9999 !important;
 }
 
-/* Ortada duran bar bir "cubuk" gibi gorunmesin: zemini seffaflastir. */
+/* The centered bar should not read as a "bar": make its ground transparent. */
 html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app,
 html.ymin-blocked:not(.ymin-safe) ytd-masthead,
 html.ymin-blocked:not(.ymin-safe) ytd-masthead #container.ytd-masthead,
@@ -311,9 +307,9 @@ html.ymin-blocked:not(.ymin-safe) #masthead #container {
   background: transparent !important;
 }
 
-/* Kutuyu bir arama motoru ana sayfasi gibi genislet ve hafifce buyut.
-   Yukseklik yerine scale kullaniliyor: hem eski (ytd-searchbox) hem yeni
-   (yt-searchbox) bilesende ic hizalamayi bozmadan calisir. */
+/* Widen the box like a search engine home page and scale it up slightly.
+   scale is used instead of height: it works on both the old (ytd-searchbox)
+   and the new (yt-searchbox) component without breaking inner alignment. */
 html.ymin-blocked:not(.ymin-safe) ytd-masthead #center.ytd-masthead,
 html.ymin-blocked:not(.ymin-safe) #masthead #center {
   flex: 0 1 584px !important;
@@ -322,7 +318,7 @@ html.ymin-blocked:not(.ymin-safe) #masthead #center {
 }
 
 /* ---------------------------------------------------------------------
-   4) SHORTS — her yerde yok sayilir
+   4) SHORTS — ignored everywhere
    --------------------------------------------------------------------- */
 
 ytd-reel-shelf-renderer,
@@ -341,10 +337,10 @@ a[href^="/shorts/"] {
 }
 
 /* ---------------------------------------------------------------------
-   5) IZLEME SAYFASI — video kalir, cevresindeki her sey gider
+   5) WATCH PAGE — the video stays, everything around it goes
    --------------------------------------------------------------------- */
 
-/* Sagdaki "Siradaki" / onerilen videolar sutunu */
+/* The "Up next" / recommended videos column on the right */
 #secondary.ytd-watch-flexy,
 #secondary-inner.ytd-watch-flexy,
 #related.ytd-watch-flexy,
@@ -356,7 +352,7 @@ ytd-item-section-renderer.ytd-watch-next-secondary-results-renderer {
   display: none !important;
 }
 
-/* Yorumlar, urun rafi, bilet rafi, bagis kutusu, konu etiketleri */
+/* Comments, merch shelf, ticket shelf, donation box, topic chips */
 ytd-comments#comments,
 #comments.ytd-watch-flexy,
 ytd-merch-shelf-renderer,
@@ -370,7 +366,7 @@ ytd-info-panel-container-renderer {
   display: none !important;
 }
 
-/* Oynatici uzerindeki bitis ekrani kartlari, duraklatma reklami, oneri baloncuklari */
+/* End-screen cards, the pause ad and suggestion bubbles over the player */
 .ytp-endscreen-content,
 .html5-endscreen,
 .ytp-videowall-still,
@@ -387,7 +383,7 @@ ytd-info-panel-container-renderer {
   display: none !important;
 }
 
-/* Sag sutun gidince video sutununu ortala */
+/* With the right column gone, center the video column */
 ytd-watch-flexy #primary.ytd-watch-flexy,
 ytd-watch-flexy #primary-inner.ytd-watch-flexy {
   max-width: none !important;
@@ -399,7 +395,7 @@ ytd-watch-flexy #columns.ytd-watch-flexy {
 }
 
 /* ---------------------------------------------------------------------
-   6) ARAMA SONUCLARI — sadece gercek sonuclar; raflar ve reklamlar gider
+   6) SEARCH RESULTS — real results only; shelves and ads go
    --------------------------------------------------------------------- */
 
 ytd-search ytd-shelf-renderer,
@@ -414,7 +410,7 @@ ytd-carousel-ad-renderer {
 }
 
 /* ---------------------------------------------------------------------
-   7) REKLAMLAR VE PROMOSYONLAR — genel temizlik
+   7) ADS AND PROMOTIONS — general cleanup
    --------------------------------------------------------------------- */
 
 ytd-ad-slot-renderer,
@@ -434,45 +430,47 @@ tp-yt-iron-overlay-backdrop[opened] {
 }
 
 /* ---------------------------------------------------------------------
-   8) SAYFA ARKA PLANI — wallpaper.png tum ekrani kaplar
+   8) PAGE BACKGROUND — the wallpaper covers the whole screen
    ---------------------------------------------------------------------
-   Gorselin adresi content.js tarafindan --ymin-wallpaper degiskenine
-   yaziliyor (chrome.runtime.getURL + manifest'teki web_accessible_resources).
-   CSS icinden dogrudan url("wallpapers/...") yazilamaz: o yol eklenti koku
-   yerine YouTube sayfasina gore cozulur ve dosya bulunamaz.
+   The image URL is written into the --ymin-wallpaper variable by content.js
+   (chrome.runtime.getURL plus web_accessible_resources in the manifest).
+   url("wallpapers/...") cannot be written here: that path resolves against
+   the YouTube page rather than the extension root, and the file is not found.
 
-   Butun kurallar JS'in ekledigi .ymin-wallpaper sinifina bagli; gorsel
-   alinamazsa (or. eklenti yeniden yuklendiyse) tek bir kural bile devreye
-   girmez ve sayfa stok zeminine doner.
+   Every rule hangs off the .ymin-wallpaper class that JS adds, so if the
+   image cannot be fetched (a reloaded extension, say) not a single rule
+   applies and the page keeps its stock ground.
 
-   background-attachment: fixed, gorseli kaydirmadan viewport'a sabitler.
+   background-attachment: fixed pins the image to the viewport so it does not
+   scroll.
 
-   Boyut ve konum hakkinda: gorselin tam ortasinda beyaz bir yazi bandi var,
-   arama cubugu da ekranin tam ortasinda duruyor. "cover + center" ikisini
-   ust uste getiriyordu (yazi, cubugun ~5 px altina denk geliyordu). Cozum:
-   gorseli %130 buyutup dikeyde %15'e cekmek. Dikey yuzde kucuk oldukca
-   gorsel asagi kayar; %15'te yazi bandi cubugun 140-220 px altina iner.
+   About size and position: the first wallpaper carries a white caption band
+   across its middle and the search bar sits dead center, so "cover + center"
+   put the two on top of each other (the caption landed ~5px below the bar).
+   The fix is to scale to 130% and pull the image down to 15%. A smaller
+   vertical percentage moves the image further down; at 15% the caption lands
+   140-220px below the bar.
 
-   max(130%, 190vh): 130% zoom degeri; 190vh ise cok dar pencerelerde
-   dikey kaplamayi garantiler (gorsel orani 1.465, yani yuksekligi
-   kaplamak icin genislik >= 146.5vh olmali; 1.3 x 146.5 = 190). Ikinci
-   deger devreye girmedigi surece davranis duz %130 ile aynidir. */
+   max(130%, 190vh): 130% is the zoom, while 190vh guarantees vertical cover
+   on very narrow windows (the image ratio is 1.465, so covering the height
+   needs a width >= 146.5vh; 1.3 x 146.5 = 190). Unless that second value
+   kicks in, the behaviour is identical to a plain 130%. */
 
 html.ymin-wallpaper {
   background-image: var(--ymin-wallpaper) !important;
-  /* Her duvar kagidinin kompozisyonu farkli; degerleri content.js gorsel
-     basina --ymin-wallpaper-size / -position degiskenlerine yaziyor.
-     Katalogda deger verilmemisse asagidaki varsayilanlar gecerli olur. */
+  /* Every wallpaper has its own composition; content.js writes per-image
+     values into --ymin-wallpaper-size / -position. When the catalog gives no
+     value, the defaults below apply. */
   background-size: var(--ymin-wallpaper-size, cover) !important;
   background-position: var(--ymin-wallpaper-position, center) !important;
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
 }
 
-/* Icerikli sayfalarda (arama sonuclari, izleme) gorselin uzerine ince bir
-   karartma serilir: aksi halde beyaz sonuc yazilari gorselin acik
-   bolgelerinde okunmaz oluyor. Bos sayfada karartma yok, gorsel tam
-   parlakliginda gorunur. Karartmayi kaldirmak icin bu kurali silmek yeterli. */
+/* On content pages (results, watch) a thin scrim is laid over the image:
+   without it the white result titles become unreadable over the brighter
+   areas. The blank page has no scrim, so the image shows at full strength.
+   Deleting this rule removes the scrim. */
 html.ymin-wallpaper:not(.ymin-blocked) {
   background-image: linear-gradient(
       rgba(0, 0, 0, 0.55),
@@ -481,9 +479,9 @@ html.ymin-wallpaper:not(.ymin-blocked) {
     var(--ymin-wallpaper) !important;
 }
 
-/* YouTube'un opak zeminleri gorseli ezmesin. Yalnizca SAYFA duzeyindeki
-   kapsayicilar seffaflastirilir; video oynatici, dusey menu vb. kendi
-   zeminlerini korur. */
+/* Do not let YouTube's opaque grounds cover the image. Only PAGE-level
+   containers are made transparent; the video player, dropdowns and the like
+   keep their own backgrounds. */
 html.ymin-wallpaper body,
 html.ymin-wallpaper ytd-app,
 html.ymin-wallpaper #content.ytd-app,
@@ -502,7 +500,7 @@ html.ymin-wallpaper #masthead #container {
 }
 
 /* ---------------------------------------------------------------------
-   9) MOBIL (m.youtube.com) — temel sadelestirme
+   9) MOBILE (m.youtube.com) — basic simplification
    --------------------------------------------------------------------- */
 
 ytm-pivot-bar-renderer,
@@ -517,23 +515,22 @@ ytm-comments-entry-point-header-renderer {
 
 
 /* ---------------------------------------------------------------------
-   9.1) LOGO — arama modunda cubugun hemen ustunde
+   9.1) LOGO — in search mode, right above the search bar
    ---------------------------------------------------------------------
-   Eleman content.js tarafindan bir kez <body>'ye ekleniyor ve orada
-   kaliyor; gorunurlugu yalnizca bu bolum belirliyor. .ymin-blocked
-   kalkinca (arama sonuclari, izleme sayfasi) logo da kayboluyor.
+   content.js adds the element to <body> once and it stays there; only this
+   section decides whether it is visible. When .ymin-blocked goes away
+   (results, watch page) the logo goes with it.
 
-   Konum: ust bar 56px yuksekliginde ve ekranin tam ortasinda duruyor,
-   yani ust kenari "50% + 28px". Logonun alt kenarini oraya sabitleyip
-   yukari dogru buyutuyoruz; boylece cubuk nerede olursa olsun logo hep
-   onun hemen ustunde kalir.
+   Position: the masthead is 56px tall and sits dead center, so its top edge
+   is at "50% + 28px". We pin the logo's bottom edge there and let it grow
+   upwards, so the logo always sits right above the bar wherever it is.
 
-   Boyut hakkinda: logo.png'nin yuksekliginin yalnizca %44'u dolu, ust ve
-   altta simetrik seffaf pay var (olculdu). Bu yuzden max-height: 150px,
-   ekranda ~66px'lik gorunur bir logo demek. Alttaki ~%28'lik seffaf pay da
-   cubukla arasindaki bosluga (~42px) donusuyor; margin-bottom bu yuzden
-   kucuk tutuldu. Logo kirpilmis bir dosyayla degistirilirse max-height'i
-   ~70px'e cekip margin-bottom'u buyutmek gerekir. */
+   About size: only 44% of logo.png's height is opaque, with symmetric
+   transparent padding above and below (measured). So max-height: 150px is
+   what produces a ~66px logo on screen. The ~28% padding underneath doubles
+   as the gap to the bar (~42px), which is why margin-bottom is kept small.
+   If the logo is replaced with a cropped file, drop max-height to ~70px and
+   raise margin-bottom. */
 
 #ymin-logo {
   position: fixed !important;
@@ -556,15 +553,14 @@ html.ymin-blocked #ymin-logo {
   display: block !important;
 }
 
-/* --- Ust bardaki kucuk logo (ana sayfa dugmesi) ------------------------
-   YouTube'un kendi <a href="/"> baglantisinin ICINE ekleniyor; tiklama
-   davranisi YouTube'un router'ina ait kaliyor, biz sadece gorseli
-   degistiriyoruz.
+/* --- The small masthead logo (home button) ------------------------------
+   It is added INSIDE YouTube's own <a href="/"> link, so the click behaviour
+   still belongs to YouTube's router; we only swap the artwork.
 
-   Yukseklik hakkinda: logo.png'nin yuksekliginin yalnizca %44'u dolu
-   (olculdu), yani height: 24px demek ekranda 10-11px'lik bir logo demekti.
-   54px, gorunur yuksekligi ~24px'e getiriyor — YouTube'un kendi logosuyla
-   ayni olcu. object-fit: contain ile en-boy orani korunur, esneme olmaz. */
+   About height: only 44% of logo.png's height is opaque (measured), so
+   height: 24px would have produced a 10-11px logo on screen. 54px brings the
+   visible height to ~24px — the same size as YouTube's own logo.
+   object-fit: contain preserves the aspect ratio, so nothing stretches. */
 
 #ymin-nav-logo {
   display: block !important;
@@ -574,15 +570,15 @@ html.ymin-blocked #ymin-logo {
   object-fit: contain !important;
 }
 
-/* Bos sayfada buyuk logo gorevi devraldigi icin bu gizlenir. #start zaten
-   gizli; bu kural yedek olarak duruyor (or. baglanti bulunamayip yedek
-   bagalanti kullanildiysa). */
+/* On the blank page the big logo takes over, so this one is hidden. #start
+   is already hidden there; this rule is a backstop (e.g. when the link was
+   not found and our fallback link is used). */
 html.ymin-blocked #ymin-nav-logo,
 html.ymin-blocked #ymin-home-link {
   display: none !important;
 }
 
-/* YouTube'un logo baglantisi bulunamazsa kurulan yedek baglanti. */
+/* The fallback link built when YouTube's logo link cannot be found. */
 #ymin-home-link {
   display: flex !important;
   align-items: center !important;
@@ -591,16 +587,17 @@ html.ymin-blocked #ymin-home-link {
 }
 
 /* ---------------------------------------------------------------------
-   10) AYARLAR ARAYUZU — disli butonu ve cekmece panel
+   10) SETTINGS INTERFACE — the gear button and the drawer panel
    ---------------------------------------------------------------------
-   Yapi settings-ui.js icinde kurulur; burada yalnizca gorunum var.
-   Butun secicilerde ymin- oneki kullanilir ve kritik ozellikler
-   !important'tir: YouTube'un genel button/svg kurallari panele sizmasin.
+   The structure is built in settings-ui.js; only the appearance lives here.
+   Every selector is prefixed with ymin- and the critical properties are
+   !important, so YouTube's generic button/svg rules cannot leak into the
+   panel.
 
-   z-index: bos sayfada ust bar 9999'a cikiyor (3. bolum), panel onun da
-   ustunde durmali. */
+   z-index: on the blank page the masthead climbs to 9999 (section 3), and
+   the panel has to sit above that. */
 
-/* --- Disli butonu: yalnizca bos sayfada ------------------------------- */
+/* --- Gear button: only on the blank page ------------------------------- */
 
 .ymin-gear {
   position: fixed !important;
@@ -635,7 +632,7 @@ html.ymin-blocked .ymin-gear {
   outline: none !important;
 }
 
-/* --- Panelin arkasindaki karartma ------------------------------------- */
+/* --- The scrim behind the panel ---------------------------------------- */
 
 .ymin-scrim {
   position: fixed !important;
@@ -652,7 +649,7 @@ html.ymin-blocked .ymin-gear {
   pointer-events: auto;
 }
 
-/* --- Cekmece panel ---------------------------------------------------- */
+/* --- Drawer panel ------------------------------------------------------ */
 
 .ymin-panel {
   position: fixed !important;
@@ -694,7 +691,7 @@ html.ymin-blocked .ymin-gear {
   }
 }
 
-/* --- Baslik ----------------------------------------------------------- */
+/* --- Header ------------------------------------------------------------ */
 
 .ymin-panel-header {
   display: flex !important;
@@ -731,7 +728,7 @@ html.ymin-blocked .ymin-gear {
   color: #ffffff !important;
 }
 
-/* --- Sekmeler --------------------------------------------------------- */
+/* --- Tabs -------------------------------------------------------------- */
 
 .ymin-tabs {
   display: flex !important;
@@ -765,7 +762,7 @@ html.ymin-blocked .ymin-gear {
   color: #ffffff !important;
 }
 
-/* --- Bolumler --------------------------------------------------------- */
+/* --- Sections ---------------------------------------------------------- */
 
 .ymin-pane {
   flex: 1 1 auto !important;
@@ -793,7 +790,7 @@ html.ymin-blocked .ymin-gear {
   display: none !important;
 }
 
-/* --- Duvar kagidi izgarasi -------------------------------------------- */
+/* --- Wallpaper grid ---------------------------------------------------- */
 
 .ymin-grid {
   display: grid !important;
@@ -853,9 +850,9 @@ html.ymin-blocked .ymin-gear {
   display: flex !important;
 }
 
-/* --- "+" karti, silme dugmesi ve gizli dosya secici -------------------- */
+/* --- "+" card, remove button and the hidden file picker ---------------- */
 
-/* Dosya secici gorunmez; "+" kartina tiklaninca programatik acilir. */
+/* The file picker is invisible; clicking the "+" card opens it. */
 .ymin-file {
   display: none !important;
 }
@@ -892,7 +889,7 @@ html.ymin-blocked .ymin-gear {
   letter-spacing: 0.02em;
 }
 
-/* Silme dugmesi: karta gelince ya da klavyeyle odaklaninca gorunur. */
+/* Remove button: appears on hover or when focused from the keyboard. */
 .ymin-tile-remove {
   position: absolute !important;
   top: 6px !important;
@@ -921,14 +918,14 @@ html.ymin-blocked .ymin-gear {
   color: #ffffff !important;
 }
 
-/* Hata durumundaki bilgi satiri */
+/* The status line in its error state */
 .ymin-note.is-error {
   border-left-color: #ff5252 !important;
   background: rgba(255, 82, 82, 0.12) !important;
   color: #ffb4b4 !important;
 }
 
-/* Depolama kullanimi ozeti (Settings sekmesi) */
+/* Storage usage summary (Settings tab) */
 .ymin-usage {
   margin-top: 6px !important;
   padding-top: 12px !important;
@@ -938,7 +935,7 @@ html.ymin-blocked .ymin-gear {
   line-height: 1.5 !important;
 }
 
-/* --- Ayar satiri ve anahtar ------------------------------------------- */
+/* --- Settings row and switch ------------------------------------------- */
 
 .ymin-row {
   display: flex !important;

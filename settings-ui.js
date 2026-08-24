@@ -1,31 +1,31 @@
 /**
- * Curious YouTube — ayarlar arayuzu
+ * Curious YouTube — settings interface
  *
- * Sag ust kosedeki disli butonu ve actigi cekmece (drawer) paneli. Panel iki
- * bolumden olusur: duvar kagidi izgarasi ve ayarlar.
+ * The gear button in the top-right corner and the drawer it opens. The panel
+ * has two sections: the wallpaper grid and the settings list.
  *
- * Bu dosya content.js'ten SONRA yuklenir ve onun window.__curiousYouTube
- * uzerinden actigi API'yi kullanir (katalog, tercihler, kullanici duvar
- * kagitlari). Icerik betikleri izole dunyayi paylastigi icin bu nesne
- * sayfanin kendi JavaScript'ine gorunmez.
+ * This file loads AFTER content.js and uses the API it exposes on
+ * window.__curiousYouTube (catalog, preferences, custom wallpapers). Content
+ * scripts share the same isolated world, so that object is invisible to
+ * YouTube's own JavaScript.
  *
- * Panel ve butonun stilleri content.css'in 10. bolumundedir; burada yalnizca
- * yapi ve davranis vardir.
+ * Styles for the panel and the button live in section 10 of content.css;
+ * this file only defines structure and behaviour.
  */
 
 (() => {
   "use strict";
 
   const api = window.__curiousYouTube;
-  if (!api) return; // content.js yuklenmediyse arayuz de acilmasin.
+  if (!api) return; // Without content.js there is no API to drive the interface.
 
   const root = document.documentElement;
 
   /**
-   * Yuklenen gorseli depoya koymadan once kucultup yeniden kodluyoruz.
-   * Base64, ikili veriden ~%33 buyuk; ham bir fotograf storage.local
-   * kotasini tek basina yiyebilir. Asagidaki denemeler sirayla uygulanir ve
-   * sinirin altina inen ilk sonuc kullanilir.
+   * Uploaded images are downscaled and re-encoded before they reach storage.
+   * Base64 is ~33% larger than binary, so a raw photo can exhaust the
+   * storage.local quota on its own. The attempts below run in order and the
+   * first result that fits under the limit wins.
    */
   const ENCODE_ATTEMPTS = [
     [2560, 0.85],
@@ -33,7 +33,7 @@
     [1440, 0.72],
   ];
 
-  /** Bu esigin altindaki kucuk gorseller yeniden kodlanmaz (kalite kaybi olmasin). */
+  /** Images below this threshold are stored as-is, to avoid re-encoding loss. */
   const KEEP_ORIGINAL_BYTES = 700 * 1024;
 
   let gear = null;
@@ -45,7 +45,7 @@
   let busy = false;
 
   /* ------------------------------------------------------------------ */
-  /* Kucuk yardimcilar                                                   */
+  /* Small helpers                                                       */
   /* ------------------------------------------------------------------ */
 
   function el(tag, className, text) {
@@ -81,7 +81,7 @@
     "</svg>";
 
   /* ------------------------------------------------------------------ */
-  /* Gorsel hazirlama (FileReader + canvas)                              */
+  /* Image preparation (FileReader + canvas)                             */
   /* ------------------------------------------------------------------ */
 
   function readAsDataURL(file) {
@@ -110,7 +110,7 @@
     canvas.height = Math.round(img.naturalHeight * scale);
     canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // WebP hem kucuk hem saydamligi korur; desteklenmiyorsa JPEG'e duseriz.
+    // WebP is smaller and keeps transparency; fall back to JPEG if unsupported.
     let out = canvas.toDataURL("image/webp", quality);
     if (out.indexOf("data:image/webp") !== 0) {
       out = canvas.toDataURL("image/jpeg", quality);
@@ -136,22 +136,22 @@
   }
 
   const ERRORS = {
-    invalid: "Bu dosya bir görsel değil.",
-    count: "En fazla " + api.limits.maxCount +
-      " özel duvar kağıdı saklanabilir. Önce birini silin.",
-    size: "Görsel küçültmeye rağmen sınırın üstünde kaldı.",
-    quota: "Depolama alanı doldu. Önce bir duvar kağıdı silin.",
-    storage: "Kaydedilemedi, lütfen tekrar deneyin.",
-    read: "Görsel okunamadı.",
+    invalid: "That file is not an image.",
+    count: "You can store at most " + api.limits.maxCount +
+      " custom wallpapers. Remove one first.",
+    size: "The image is still over the limit after downscaling.",
+    quota: "Storage is full. Remove a wallpaper first.",
+    storage: "Could not save, please try again.",
+    read: "The image could not be read.",
   };
 
   async function onFileChosen(event) {
     const file = event.target.files && event.target.files[0];
-    event.target.value = ""; // ayni dosya tekrar secilebilsin
+    event.target.value = ""; // allow re-picking the same file
     if (!file || busy) return;
 
     busy = true;
-    setStatus("Görsel hazırlanıyor…", false);
+    setStatus("Preparing image…", false);
     try {
       const dataUrl = await prepare(file);
       const result = await api.addCustomWallpaper(dataUrl);
@@ -186,27 +186,27 @@
     panel = el("aside", "ymin-panel");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
-    panel.setAttribute("aria-label", "Curious YouTube ayarlari");
+    panel.setAttribute("aria-label", "Curious YouTube settings");
 
-    /* --- Baslik --- */
+    /* --- Header --- */
     const header = el("header", "ymin-panel-header");
     header.appendChild(el("div", "ymin-panel-title", "Curious YouTube"));
 
     const close = el("button", "ymin-icon-btn");
     close.type = "button";
-    close.setAttribute("aria-label", "Kapat");
+    close.setAttribute("aria-label", "Close");
     close.textContent = "×";
     close.addEventListener("click", closePanel);
     header.appendChild(close);
     panel.appendChild(header);
 
-    /* --- Sekmeler --- */
+    /* --- Tabs --- */
     const tabs = el("nav", "ymin-tabs");
     tabs.setAttribute("role", "tablist");
     tabs.append(tabButton("wallpapers", "Wallpapers"), tabButton("settings", "Settings"));
     panel.appendChild(tabs);
 
-    /* --- Bolum: Wallpapers --- */
+    /* --- Section: Wallpapers --- */
     const wallpapersPane = el("div", "ymin-pane");
     wallpapersPane.dataset.pane = "wallpapers";
 
@@ -218,8 +218,8 @@
     const shuffleNote = el(
       "p",
       "ymin-note",
-      "Karisik mod acik: sectiginiz gorsel simdi uygulanir, ancak ana sayfayi " +
-        "her acisinizda rastgele biri gosterilir."
+      "Shuffle is on: your pick applies right now, but a random wallpaper " +
+        "is shown every time you open the home page."
     );
     shuffleNote.dataset.role = "shuffle-note";
     wallpapersPane.appendChild(shuffleNote);
@@ -229,27 +229,27 @@
     wallpapersPane.appendChild(grid);
     panel.appendChild(wallpapersPane);
 
-    /* Gizli dosya secici: "+" kartina tiklandiginda tetiklenir. */
+    /* Hidden file picker, triggered by the "+" card. */
     fileInput = el("input", "ymin-file");
     fileInput.type = "file";
     fileInput.accept = "image/*";
     fileInput.addEventListener("change", onFileChosen);
     wallpapersPane.appendChild(fileInput);
 
-    /* --- Bolum: Settings --- */
+    /* --- Section: Settings --- */
     const settingsPane = el("div", "ymin-pane");
     settingsPane.dataset.pane = "settings";
     settingsPane.hidden = true;
 
     const row = el("div", "ymin-row");
     const label = el("div", "ymin-row-label");
-    label.appendChild(el("div", "ymin-row-title", "Karışık Duvar Kağıdı"));
+    label.appendChild(el("div", "ymin-row-title", "Shuffle Wallpaper"));
     label.appendChild(
       el(
         "div",
         "ymin-row-sub",
-        "Ana sayfayı her açtığınızda rastgele bir duvar kağıdı gösterilir. " +
-          "Kendi yüklediğiniz görseller de havuza dahildir."
+        "Shows a random wallpaper every time you open the home page. " +
+          "Your own uploads are part of the pool too."
       )
     );
 
@@ -261,7 +261,7 @@
     toggle.addEventListener("click", () => {
       const next = !api.getPrefs()[api.KEY_SHUFFLE];
       api.setPrefs({ [api.KEY_SHUFFLE]: next });
-      // Acilir acilmaz etkisi gorulsun; kapatilinca sabit secime donulur.
+      // Show the effect immediately; turning it off restores the fixed choice.
       api.applyWallpaperRef(
         next ? api.randomRef() : api.getPrefs()[api.KEY_SELECTED]
       );
@@ -314,24 +314,24 @@
     if (!built) return;
     api.storageUsage().then(({ used, limit }) => {
       panel.querySelector('[data-role="usage"]').textContent =
-        "Depolama: " + formatBytes(used) + " / " + formatBytes(limit) +
+        "Storage: " + formatBytes(used) + " / " + formatBytes(limit) +
         " · " + api.getCustomIndex().length + "/" + api.limits.maxCount +
-        " özel duvar kağıdı";
+        " custom wallpapers";
     });
   }
 
   /* ------------------------------------------------------------------ */
-  /* Izgara                                                              */
+  /* Grid                                                                */
   /* ------------------------------------------------------------------ */
 
   function addTile() {
     const btn = el("button", "ymin-tile ymin-tile-add");
     btn.type = "button";
-    btn.setAttribute("aria-label", "Bilgisayarindan duvar kagidi ekle");
-    btn.title = "Duvar kağıdı ekle";
+    btn.setAttribute("aria-label", "Add a wallpaper from your computer");
+    btn.title = "Add wallpaper";
     const icon = el("span", "ymin-add-icon");
     icon.innerHTML = PLUS_SVG;
-    btn.append(icon, el("span", "ymin-add-text", "Ekle"));
+    btn.append(icon, el("span", "ymin-add-text", "Add"));
     btn.addEventListener("click", () => {
       if (!busy) fileInput.click();
     });
@@ -346,7 +346,7 @@
     btn.title = label;
 
     const img = el("img", "ymin-thumb");
-    img.loading = "lazy"; // Ekranda gorunmeyen kucuk resimler bosuna acilmasin.
+    img.loading = "lazy"; // Thumbnails outside the viewport should not decode needlessly.
     img.decoding = "async";
     img.alt = "";
     if (src) img.src = src;
@@ -359,12 +359,12 @@
       const remove = el("span", "ymin-tile-remove");
       remove.setAttribute("role", "button");
       remove.setAttribute("tabindex", "0");
-      remove.setAttribute("aria-label", label + " — sil");
-      remove.title = "Sil";
+      remove.setAttribute("aria-label", label + " — remove");
+      remove.title = "Remove";
       remove.innerHTML = TRASH_SVG;
 
       const doRemove = (event) => {
-        // Kartin secim tiklamasini tetiklemesin.
+        // Do not let this bubble into the tile's select handler.
         event.stopPropagation();
         event.preventDefault();
         api.removeCustomWallpaper(api.customIdOf(ref))
@@ -389,7 +389,7 @@
     return btn;
   }
 
-  /** Izgarayi bastan kurar: "+" karti, yerlesikler, sonra kullanicininkiler. */
+  /** Rebuilds the grid: "+" card, built-ins, then the user's own uploads. */
   function renderGrid() {
     if (!built) return Promise.resolve();
     const grid = panel.querySelector('[data-role="grid"]');
@@ -401,7 +401,7 @@
       try {
         src = chrome.runtime.getURL(entry.file);
       } catch (_) {
-        /* baglam dustuyse bos kutu kalir */
+        /* leave an empty tile if the extension context is gone */
       }
       grid.appendChild(tile(entry.file, src, entry.label, false));
     });
@@ -413,14 +413,14 @@
       index.forEach((meta, i) => {
         const ref = api.customRefOf(meta.id);
         grid.appendChild(
-          tile(ref, data[meta.id] || "", "Kendi duvar kagidiniz " + (i + 1), true)
+          tile(ref, data[meta.id] || "", "Your wallpaper " + (i + 1), true)
         );
       });
       render();
     });
   }
 
-  /** Arayuzu yururlukteki tercihlere gore tazeler. */
+  /** Refreshes the interface from the current preferences. */
   function render() {
     if (!built) return;
     const current = api.getPrefs();
@@ -440,13 +440,13 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Ac / kapa                                                           */
+  /* Open / close                                                        */
   /* ------------------------------------------------------------------ */
 
   function openPanel() {
     buildPanel();
     open = true;
-    // Bir sonraki kareye birakiyoruz ki gecis animasyonu calissin.
+    // Deferred one frame so the transition actually animates.
     requestAnimationFrame(() => {
       scrim.classList.add("is-open");
       panel.classList.add("is-open");
@@ -478,7 +478,7 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Kurulum                                                             */
+  /* Setup                                                               */
   /* ------------------------------------------------------------------ */
 
   function mount() {
@@ -486,15 +486,15 @@
 
     gear = el("button", "ymin-gear");
     gear.type = "button";
-    gear.setAttribute("aria-label", "Ayarlar");
+    gear.setAttribute("aria-label", "Settings");
     gear.setAttribute("aria-expanded", "false");
-    gear.title = "Ayarlar";
+    gear.title = "Settings";
     gear.innerHTML = GEAR_SVG;
     gear.addEventListener("click", () => (open ? closePanel() : openPanel()));
     document.body.appendChild(gear);
 
-    // Disli yalnizca bos sayfada gorunur (CSS). Kullanici arama yapip
-    // sayfadan cikarsa acik kalan panel de kapansin.
+    // The gear is only visible on the blank page (CSS). If the user searches
+    // and leaves that page, close the panel that was left open.
     new MutationObserver(() => {
       if (open && !root.classList.contains("ymin-blocked")) closePanel();
     }).observe(root, { attributes: true, attributeFilter: ["class"] });

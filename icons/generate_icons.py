@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Eklenti ikonlarini (16/48/128 px) kok dizindeki small-logo.png'den uretir.
+"""Builds the extension icons (16/48/128 px) from small-logo.png in the root.
 
-Bagimlilik yok: PNG okuma, yeniden boyutlandirma ve yazma islemleri yalnizca
-standart kutuphaneyle (zlib + struct) yapilir. Calistirmak icin:
+No dependencies: reading, resizing and writing PNGs is done with the standard
+library alone (zlib + struct). To run:
 
     python3 icons/generate_icons.py
 
-Iki nokta bilerek boyle:
+Two decisions are deliberate:
 
-* Kaynak gorsel tam kare degilse (or. 195x211) once MERKEZDEN kare kirpilir.
-  Dogrudan kareye sikistirmak logoyu yatay/dikey ezerdi.
+* If the source is not perfectly square (e.g. 195x211) it is CENTER-CROPPED
+  first. Squeezing it straight into a square would stretch the logo.
 
-* Kucultme, hedef pikselin kaynakta kapladigi alanin agirlikli ortalamasiyla
-  yapilir (box filtre). 195 px'den 16 px'e inerken tek tek ornekleme almak
-  detaylari titrek ve tirtikli birakirdi. Alfa, renk ortalamasi alinirken
-  onceden carpilir; aksi halde saydam kenarlarda hayalet halka olusur.
+* Downscaling averages the source area each destination pixel covers (a box
+  filter). Point-sampling on the way from 195 px down to 16 px would leave the
+  result jittery and jagged. Alpha is premultiplied before colours are
+  averaged; otherwise transparent edges pick up a ghost halo.
 """
 
 import math
@@ -26,17 +26,16 @@ SOURCE = "small-logo.png"
 SIZES = (16, 48, 128)
 
 
-# --------------------------------------------------------------------- oku
+# -------------------------------------------------------------------- read
 
 
 def read_png(path):
-    """8 bit derinlikli, interlace'siz bir PNG'yi (genislik, yukseklik, RGBA)
-    olarak cozer."""
+    """Decodes an 8-bit, non-interlaced PNG into (width, height, RGBA)."""
     with open(path, "rb") as handle:
         data = handle.read()
 
     if data[:8] != b"\x89PNG\r\n\x1a\n":
-        raise ValueError("%s bir PNG dosyasi degil" % path)
+        raise ValueError("%s is not a PNG file" % path)
 
     pos, idat, header, palette, trns = 8, [], None, None, None
     while pos < len(data):
@@ -57,13 +56,13 @@ def read_png(path):
 
     width, height, depth, color, _, _, interlace = header
     if depth != 8:
-        raise ValueError("yalnizca 8 bit derinlik destekleniyor (bulunan: %d)" % depth)
+        raise ValueError("only 8-bit depth is supported (found: %d)" % depth)
     if interlace:
-        raise ValueError("interlace'li PNG desteklenmiyor")
+        raise ValueError("interlaced PNGs are not supported")
 
     channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(color)
     if channels is None:
-        raise ValueError("bilinmeyen renk tipi: %d" % color)
+        raise ValueError("unknown colour type: %d" % color)
 
     raw = zlib.decompress(b"".join(idat))
     rows = unfilter(raw, width, height, channels)
@@ -71,7 +70,7 @@ def read_png(path):
 
 
 def unfilter(raw, width, height, channels):
-    """PNG satir filtrelerini (None/Sub/Up/Average/Paeth) geri alir."""
+    """Reverses the PNG row filters (None/Sub/Up/Average/Paeth)."""
     stride = width * channels
     out = bytearray(height * stride)
     prev = bytearray(stride)
@@ -108,7 +107,7 @@ def unfilter(raw, width, height, channels):
                     pred = c
                 line[x] = (line[x] + pred) & 0xFF
         elif ftype != 0:
-            raise ValueError("bilinmeyen satir filtresi: %d" % ftype)
+            raise ValueError("unknown row filter: %d" % ftype)
 
         out[y * stride : (y + 1) * stride] = line
         prev = line
@@ -117,7 +116,7 @@ def unfilter(raw, width, height, channels):
 
 
 def to_rgba(rows, width, height, color, palette, trns):
-    """Cozulmus satirlari her durumda 4 kanalli RGBA'ya cevirir."""
+    """Converts decoded rows to 4-channel RGBA in every case."""
     if color == 6:
         return rows
 
@@ -128,15 +127,15 @@ def to_rgba(rows, width, height, color, palette, trns):
             s = i * 3
             out[o : o + 3] = rows[s : s + 3]
             out[o + 3] = 255
-        elif color == 0:  # gri
+        elif color == 0:  # greyscale
             v = rows[i]
             out[o] = out[o + 1] = out[o + 2] = v
             out[o + 3] = 255
-        elif color == 4:  # gri + alfa
+        elif color == 4:  # greyscale + alpha
             s = i * 2
             out[o] = out[o + 1] = out[o + 2] = rows[s]
             out[o + 3] = rows[s + 1]
-        elif color == 3:  # paletli
+        elif color == 3:  # palette
             idx = rows[i]
             s = idx * 3
             out[o : o + 3] = palette[s : s + 3]
@@ -144,11 +143,11 @@ def to_rgba(rows, width, height, color, palette, trns):
     return out
 
 
-# ------------------------------------------------------------------ isle
+# --------------------------------------------------------------- process
 
 
 def center_crop_square(pixels, width, height):
-    """Gorseli merkezden en buyuk kareye kirpar."""
+    """Crops the image to the largest centered square."""
     side = min(width, height)
     if width == height:
         return pixels, side
@@ -163,7 +162,7 @@ def center_crop_square(pixels, width, height):
 
 
 def resize_box(pixels, size, target):
-    """Kare gorseli alan agirlikli ortalamayla (box filtre) kucultur."""
+    """Downscales a square image with an area-weighted average (box filter)."""
     out = bytearray(target * target * 4)
     ratio = size / target
 
@@ -176,7 +175,7 @@ def resize_box(pixels, size, target):
             sx0, sx1 = int(x0), min(size, int(math.ceil(x1)))
 
             r = g = b = 0.0
-            alpha_sum = 0.0  # agirlik x alfa (renkleri bununla normalize ederiz)
+            alpha_sum = 0.0  # weight x alpha (colours are normalised by this)
             weight_sum = 0.0
 
             for sy in range(sy0, sy1):
@@ -210,7 +209,7 @@ def resize_box(pixels, size, target):
     return out
 
 
-# ------------------------------------------------------------------- yaz
+# --------------------------------------------------------------------- write
 
 
 def write_png(path, size, pixels):
@@ -242,21 +241,21 @@ def main():
 
     if not os.path.exists(source):
         raise SystemExit(
-            "Kaynak bulunamadi: %s\nKok dizine %s dosyasini koyun." % (source, SOURCE)
+            "Source not found: %s\nPlace %s in the project root." % (source, SOURCE)
         )
 
     width, height, pixels = read_png(source)
-    print("kaynak: %s (%dx%d)" % (SOURCE, width, height))
+    print("source: %s (%dx%d)" % (SOURCE, width, height))
 
     square, side = center_crop_square(pixels, width, height)
     if side != width or side != height:
-        print("merkezden kare kirpildi: %dx%d" % (side, side))
+        print("center-cropped to square: %dx%d" % (side, side))
 
     for target in SIZES:
         out = resize_box(square, side, target)
         path = os.path.join(here, "icon%d.png" % target)
         size_bytes = write_png(path, target, out)
-        print("  icon%d.png  (%d bayt)" % (target, size_bytes))
+        print("  icon%d.png  (%d bytes)" % (target, size_bytes))
 
 
 if __name__ == "__main__":
