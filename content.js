@@ -796,9 +796,6 @@
   function apply() {
     const page = currentPage();
 
-    // The gear has to stay reachable even while the extension is off, so its
-    // marker follows the route alone and never the enabled state.
-    root.classList.toggle("ymin-home", page === "blocked");
     syncFeatureClasses();
 
     if (!isEnabled()) {

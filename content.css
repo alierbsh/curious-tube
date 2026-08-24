@@ -665,17 +665,25 @@ html.ymin-on #ymin-home-link {
    !important, so YouTube's generic button/svg rules cannot leak into the
    panel.
 
-   z-index: on the blank page the masthead climbs to 9999 (section 3), and
-   the panel has to sit above that. */
+   NOTHING in this section is gated on .ymin-on. The panel is the only way
+   back once the extension has been switched off, so it has to survive the
+   master switch — otherwise turning the extension off would lock the user
+   out of turning it back on.
 
-/* --- Gear button: only on the blank page ------------------------------- */
+   z-index: on the blank page our own masthead climbs to 9999 (section 3),
+   and with the extension off YouTube's own overlays (masthead, dialogs,
+   miniplayer) sit in the low thousands. The values here are far above both
+   so the button can never be buried. */
+
+/* --- Gear button: always present, on every route ----------------------- */
 
 .ymin-gear {
   position: fixed !important;
   top: 20px !important;
   right: 24px !important;
-  z-index: 10000 !important;
-  display: none;
+  bottom: auto !important;
+  z-index: 99999 !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   width: 40px !important;
@@ -691,19 +699,20 @@ html.ymin-on #ymin-home-link {
   transition: opacity 160ms ease, transform 220ms ease, color 160ms ease;
 }
 
-/* Note the class: .ymin-home follows the route, not the enabled state. If it
-   were gated on .ymin-on, switching the extension off would also remove the
-   only way to switch it back on. */
-html.ymin-home .ymin-gear {
-  display: flex !important;
-}
-
-/* With the extension off, YouTube's own masthead occupies the top-right
-   corner, so the gear moves down out of its way rather than sitting on top of
-   the account buttons. */
-html.ymin-home:not(.ymin-on) .ymin-gear {
+/* With the extension off, YouTube's own masthead is intact and owns the
+   top-right corner (account avatar, notifications, create button), so the
+   gear drops to the bottom-right instead of sitting on top of them. With the
+   extension on, section 3 hides #end on every route, so the corner is free
+   and the gear stays where it was designed to be. */
+html:not(.ymin-on) .ymin-gear {
   top: auto !important;
-  bottom: 24px !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  /* In this state the button is the only way back, and it sits on top of
+     YouTube's own (possibly light) theme, so it stops being subtle. */
+  opacity: 0.92;
+  background: rgba(20, 20, 20, 0.85) !important;
+  color: #ffffff !important;
 }
 
 .ymin-gear:hover,
@@ -719,7 +728,7 @@ html.ymin-home:not(.ymin-on) .ymin-gear {
 .ymin-scrim {
   position: fixed !important;
   inset: 0 !important;
-  z-index: 10001 !important;
+  z-index: 100000 !important;
   background: rgba(0, 0, 0, 0.5);
   opacity: 0;
   pointer-events: none;
@@ -738,7 +747,7 @@ html.ymin-home:not(.ymin-on) .ymin-gear {
   top: 16px !important;
   right: 16px !important;
   bottom: 16px !important;
-  z-index: 10002 !important;
+  z-index: 100001 !important;
   display: flex !important;
   flex-direction: column !important;
   width: 380px !important;

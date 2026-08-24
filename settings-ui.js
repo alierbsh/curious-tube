@@ -19,8 +19,6 @@
   const api = window.__curiousYouTube;
   if (!api) return; // Without content.js there is no API to drive the interface.
 
-  const root = document.documentElement;
-
   /**
    * Uploaded images are downscaled and re-encoded before they reach storage.
    * Base64 is ~33% larger than binary, so a raw photo can exhaust the
@@ -551,25 +549,33 @@
   /* Setup                                                               */
   /* ------------------------------------------------------------------ */
 
+  /**
+   * Builds the gear and attaches it to <body>.
+   *
+   * Safe to call repeatedly: the button and its listeners are created once,
+   * and every later call only checks that the nodes are still in the
+   * document. This is deliberate — the gear is the only route back once the
+   * extension has been switched off, so a single re-render by YouTube that
+   * happened to detach it would lock the user out for good. Re-attaching is
+   * cheap; being unreachable is not.
+   */
   function mount() {
-    if (gear || !document.body) return;
+    if (!document.body) return;
 
-    gear = el("button", "ymin-gear");
-    gear.type = "button";
-    gear.setAttribute("aria-label", "Settings");
-    gear.setAttribute("aria-expanded", "false");
-    gear.title = "Settings";
-    gear.innerHTML = GEAR_SVG;
-    gear.addEventListener("click", () => (open ? closePanel() : openPanel()));
-    document.body.appendChild(gear);
+    if (!gear) {
+      gear = el("button", "ymin-gear");
+      gear.type = "button";
+      gear.setAttribute("aria-label", "Settings");
+      gear.setAttribute("aria-expanded", "false");
+      gear.title = "Settings";
+      gear.innerHTML = GEAR_SVG;
+      gear.addEventListener("click", () => (open ? closePanel() : openPanel()));
+      api.onPrefsChange(render);
+    }
 
-    // The gear is only visible on the blank page (CSS). If the user searches
-    // and leaves that page, close the panel that was left open.
-    new MutationObserver(() => {
-      if (open && !root.classList.contains("ymin-home")) closePanel();
-    }).observe(root, { attributes: true, attributeFilter: ["class"] });
-
-    api.onPrefsChange(render);
+    if (!gear.isConnected) document.body.appendChild(gear);
+    // The drawer lives next to the gear; if one was detached, so was the other.
+    if (built && !panel.isConnected) document.body.append(scrim, panel);
   }
 
   if (document.body) {
@@ -577,4 +583,10 @@
   } else {
     document.addEventListener("DOMContentLoaded", mount, { once: true });
   }
+
+  // YouTube is a single-page app: <body> survives navigation today, but a
+  // re-render must never be able to strand the settings button.
+  ["yt-navigate-finish", "yt-page-data-updated", "popstate"].forEach((evt) => {
+    window.addEventListener(evt, mount, true);
+  });
 })();
