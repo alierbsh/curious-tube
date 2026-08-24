@@ -20,13 +20,62 @@
    1) UST BAR (MASTHEAD) — sadece arama alani kalir
    --------------------------------------------------------------------- */
 
-/* Sol taraf: hamburger menu butonu + YouTube logosu + ulke kodu */
-ytd-masthead #start.ytd-masthead,
+/* Sol taraf: hamburger menu butonu ve ulke kodu gider. Logo ALANI kalir —
+   YouTube'un kendi ana sayfa baglantisini silmiyoruz, yalnizca icindeki
+   YouTube isaretini gizleyip yerine kendi logomuzu koyuyoruz (bkz. 9.1).
+   Boylece baglantiya bagli SPA yonlendirme davranisi oldugu gibi calisir. */
 ytd-masthead #guide-button,
-ytd-masthead ytd-topbar-logo-renderer,
 #masthead #guide-button,
-#masthead ytd-topbar-logo-renderer {
+ytd-masthead ytd-topbar-logo-renderer #logo-icon,
+ytd-masthead ytd-topbar-logo-renderer yt-icon,
+ytd-masthead ytd-topbar-logo-renderer svg,
+ytd-masthead ytd-topbar-logo-renderer #country-code {
   display: none !important;
+}
+
+/* Baglanti kutusu logomuzu kirpmasin (YouTube sabit olcu verebiliyor). */
+ytd-masthead ytd-topbar-logo-renderer,
+ytd-masthead ytd-topbar-logo-renderer a {
+  display: flex !important;
+  align-items: center !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* Bos sayfada sol taraf tamamen gizlenir: hem buyuk logomuz zaten ekranda
+   (ikisi birbirini ezmesin), hem de gorunur bir #start ortadaki arama
+   cubugunun hizalamasini kaydirirdi. */
+html.ymin-blocked ytd-masthead #start.ytd-masthead,
+html.ymin-blocked #masthead #start {
+  display: none !important;
+}
+
+/* Icerik sayfalarinda logo solda durur ama AKISIN DISINDA: #container
+   justify-content: center kullandigi icin, yer kaplayan bir #start arama
+   cubugunu kendi genisliginin yarisi kadar saga iterdi. Mutlak konum
+   bunu onler, arama kutusu ekranin tam ortasinda kalir. */
+ytd-masthead #container.ytd-masthead,
+#masthead #container {
+  position: relative !important;
+}
+
+html:not(.ymin-blocked) ytd-masthead #start.ytd-masthead,
+html:not(.ymin-blocked) #masthead #start {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 16px !important;
+  z-index: 1 !important;
+  align-items: center !important;
+}
+
+/* Dar pencerede logo arama kutusuyla cakismasin. */
+@media (max-width: 720px) {
+  html:not(.ymin-blocked) ytd-masthead #start.ytd-masthead,
+  html:not(.ymin-blocked) #masthead #start {
+    display: none !important;
+  }
 }
 
 /* Sag taraf: olustur, bildirimler, avatar, "uygulamayi indir" vb. */
@@ -505,6 +554,40 @@ ytm-comments-entry-point-header-renderer {
 
 html.ymin-blocked #ymin-logo {
   display: block !important;
+}
+
+/* --- Ust bardaki kucuk logo (ana sayfa dugmesi) ------------------------
+   YouTube'un kendi <a href="/"> baglantisinin ICINE ekleniyor; tiklama
+   davranisi YouTube'un router'ina ait kaliyor, biz sadece gorseli
+   degistiriyoruz.
+
+   Yukseklik hakkinda: logo.png'nin yuksekliginin yalnizca %44'u dolu
+   (olculdu), yani height: 24px demek ekranda 10-11px'lik bir logo demekti.
+   54px, gorunur yuksekligi ~24px'e getiriyor — YouTube'un kendi logosuyla
+   ayni olcu. object-fit: contain ile en-boy orani korunur, esneme olmaz. */
+
+#ymin-nav-logo {
+  display: block !important;
+  width: auto !important;
+  height: 54px !important;
+  max-width: 130px !important;
+  object-fit: contain !important;
+}
+
+/* Bos sayfada buyuk logo gorevi devraldigi icin bu gizlenir. #start zaten
+   gizli; bu kural yedek olarak duruyor (or. baglanti bulunamayip yedek
+   bagalanti kullanildiysa). */
+html.ymin-blocked #ymin-nav-logo,
+html.ymin-blocked #ymin-home-link {
+  display: none !important;
+}
+
+/* YouTube'un logo baglantisi bulunamazsa kurulan yedek baglanti. */
+#ymin-home-link {
+  display: flex !important;
+  align-items: center !important;
+  margin-right: 8px !important;
+  text-decoration: none !important;
 }
 
 /* ---------------------------------------------------------------------

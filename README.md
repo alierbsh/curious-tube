@@ -30,8 +30,19 @@ eklenti ici bir dosyanin yolu CSS'ten dogrudan cozulemez. Bos sayfada gorsel
 tam parlakligindadir; arama sonuclari ve izleme sayfasinda uzerine ince bir
 karartma serilir, boylece yazilar gorselin acik bolgelerinde de okunur.
 
-Bos sayfada arama cubugunun hemen ustunde `logo.png` gosterilir; arama
-yapildiginda (`.ymin-blocked` kalkinca) logo da gizlenir.
+`logo.png` iki yerde kullanilir ve ikisi birbirini disler:
+
+- **Bos sayfada** arama cubugunun hemen ustunde buyuk halde durur.
+- **Icerik sayfalarinda** (arama sonuclari, izleme) ust barin sol ustunde,
+  YouTube'un kendi logosunun yerinde kucuk halde durur ve **ana sayfa
+  dugmesi** olarak calisir.
+
+Sol ustteki logo, YouTube'un ana sayfa baglantisinin yerine gecmez; o
+`<a href="/">` elemani DOM'da kalir, yalnizca icindeki YouTube isareti gizlenip
+kendi gorselimiz ayni baglantinin icine eklenir. Boylece tiklama YouTube'un
+kendi SPA yonlendirmesiyle calisir (tam sayfa yenilemesi olmaz) ve klavye
+erisimi bozulmaz. Baglanti bulunamazsa yedek olarak kendi `<a href="/">`
+baglantimiz kurulur.
 
 Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
 ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
@@ -79,7 +90,8 @@ ytd-masthead #avatar-btn { display: block !important; }
 tamamlama onerileri" blogunu silin.
 
 **Logoyu degistirmek** icin kok dizindeki `logo.png` dosyasini degistirin.
-Boyut `content.css` 9.1 bolumundeki `max-height` ile ayarlanir. Dikkat: mevcut
+Boyutlar `content.css` 9.1 bolumunde: buyuk logo `max-height`, ust bardaki
+kucuk logo `#ymin-nav-logo` icindeki `height`. Dikkat: mevcut
 dosyanin yuksekliginin yalnizca %44'u dolu (ust/altta seffaf pay var), bu
 yuzden 150px degeri ekranda ~66px'lik bir logoya denk geliyor. Kirpilmis bir
 dosya koyarsaniz `max-height`'i ~70px'e cekip `margin-bottom`'u buyutun.

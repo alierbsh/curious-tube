@@ -11,9 +11,10 @@
  *                     dugumleri gorulur gorulmez kaldirilir.
  *   4) Emniyet      — arama kutusu gorunmuyorsa eklentinin riskli kurallari
  *                     otomatik devre disi birakilir (bkz. ensureSearchVisible).
- *   5) Varlik       — sayfanin arka plan gorseli, eklenti ici adresi ancak
- *                     calisma aninda bilindigi icin CSS degiskenine buradan
- *                     yazilir (bkz. applyWallpaper).
+ *   5) Varlik       — sayfanin arka plan gorseli ve logolar; eklenti ici
+ *                     adresler ancak calisma aninda bilindigi icin buradan
+ *                     yazilir (bkz. applyWallpaperRef, renderLogo,
+ *                     renderNavLogo).
  */
 
 (() => {
@@ -418,6 +419,54 @@
     }
   }
 
+  /**
+   * Ust bardaki YouTube logosunu kendi logomuzla degistirir.
+   *
+   * Onemli olan nasil yaptigi: YouTube'un ana sayfa baglantisini SILMIYORUZ.
+   * O <a href="/"> elemani YouTube'un kendi router'ina baglidir; kaldirip
+   * yerine yenisini koysaydik tiklama tam sayfa yenilemeye duserdi. Bunun
+   * yerine baglantinin icindeki YouTube isaretini CSS ile gizleyip (1. bolum)
+   * kendi <img>'imizi ayni baglantinin icine ekliyoruz. Boylece tiklama
+   * davranisi, SPA gezinmesi ve klavye erisimi oldugu gibi kaliyor.
+   *
+   * Baglanti bulunamazsa (YouTube isaretlemesi degisirse) #start icine kendi
+   * baglantimizi kuruyoruz; o da ana sayfaya goturur, sadece tam sayfa
+   * yenilemesiyle.
+   */
+  function renderNavLogo() {
+    // Attached olmayan dugumu bulmaz: YouTube silmisse yeniden ekleriz.
+    if (document.getElementById("ymin-nav-logo")) return;
+
+    const masthead = document.querySelector("ytd-masthead, #masthead");
+    if (!masthead) return;
+
+    let host = masthead.querySelector("ytd-topbar-logo-renderer a[href]");
+
+    if (!host) {
+      const start = masthead.querySelector("#start");
+      if (!start) return;
+      host = document.getElementById("ymin-home-link");
+      if (!host) {
+        host = document.createElement("a");
+        host.id = "ymin-home-link";
+        host.href = "/";
+        host.setAttribute("aria-label", "Ana sayfa");
+        start.insertBefore(host, start.firstChild);
+      }
+    }
+
+    try {
+      const img = document.createElement("img");
+      img.id = "ymin-nav-logo";
+      img.src = chrome.runtime.getURL(LOGO);
+      img.alt = "Ana sayfa"; // Baglanti oldugu icin erisilebilir bir ad tasir.
+      img.decoding = "async";
+      host.appendChild(img);
+    } catch (_) {
+      // Eklenti baglami dustuyse ust bar YouTube'un stok halinde kalir.
+    }
+  }
+
   /* ---- Tercihler: localStorage (senkron onbellek) + chrome.storage ---- */
 
   /**
@@ -590,6 +639,7 @@
       setTimeout(() => {
         ensureSearchVisible();
         renderLogo();
+        renderNavLogo();
         stripPlaceholder();
         if (root.classList.contains("ymin-blocked")) focusSearch();
       }, delay)
@@ -624,6 +674,7 @@
     lastPage = page;
 
     renderLogo();
+    renderNavLogo();
     stripPlaceholder();
     settle();
 
