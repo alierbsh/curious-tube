@@ -30,6 +30,9 @@ eklenti ici bir dosyanin yolu CSS'ten dogrudan cozulemez. Bos sayfada gorsel
 tam parlakligindadir; arama sonuclari ve izleme sayfasinda uzerine ince bir
 karartma serilir, boylece yazilar gorselin acik bolgelerinde de okunur.
 
+Bos sayfada arama cubugunun hemen ustunde `logo.png` gosterilir; arama
+yapildiginda (`.ymin-blocked` kalkinca) logo da gizlenir.
+
 Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
 ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
 yoktur, kutunun icindeki stok "Ara" / "Search" yazisi da `content.js`
@@ -53,6 +56,7 @@ sadece hesap arayuzu gorunmez olur.
 | `manifest.json` | MV3 tanimi; yalnizca `www.youtube.com` ve `m.youtube.com` icin izin ister. Tek ek izin `storage` (duvar kagidi tercihi icin). |
 | `content.css` | Asil gizleme katmani. `document_start` ile enjekte edildigi icin sayfa hic titremez. |
 | `content.js` | SPA rota takibi, Shorts yonlendirmesi, placeholder temizligi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
+| `logo.png` | Arama modunda cubugun ustunde gosterilen logo. `web_accessible_resources` icinde tanimlidir. |
 | `settings-ui.js` | Sag ust kosedeki disli butonu ve ayarlar paneli (duvar kagidi izgarasi + karisik mod anahtari). |
 | `wallpapers/` | Duvar kagitlari (`wallpaper-1..9`). `manifest.json` icinde `web_accessible_resources: ["wallpapers/*"]` olarak tanimlidir; adresleri calisma aninda `chrome.runtime.getURL` ile alinir. |
 | `icons/generate_icons.py` | Ikonlari yeniden uretir: `python3 icons/generate_icons.py` |
@@ -73,6 +77,12 @@ ytd-masthead #avatar-btn { display: block !important; }
 
 **Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
 tamamlama onerileri" blogunu silin.
+
+**Logoyu degistirmek** icin kok dizindeki `logo.png` dosyasini degistirin.
+Boyut `content.css` 9.1 bolumundeki `max-height` ile ayarlanir. Dikkat: mevcut
+dosyanin yuksekliginin yalnizca %44'u dolu (ust/altta seffaf pay var), bu
+yuzden 150px degeri ekranda ~66px'lik bir logoya denk geliyor. Kirpilmis bir
+dosya koyarsaniz `max-height`'i ~70px'e cekip `margin-bottom`'u buyutun.
 
 **Arka plan gorselini degistirmek** icin `wallpapers/wallpaper-1.png`
 dosyasini degistirin (ayni ad korunursa baska hicbir yere dokunmak gerekmez).

@@ -71,6 +71,9 @@
     { file: "wallpapers/wallpaper-9.jpg", label: "Duvar kagidi 9" },
   ];
 
+  /** Arama modunda cubugun ustunde gosterilen logo. */
+  const LOGO = "logo.png";
+
   /** chrome.storage.local anahtarlari. */
   const KEY_SELECTED = "selectedWallpaper";
   const KEY_SHUFFLE = "shuffleWallpaper";
@@ -229,6 +232,25 @@
     return prefs[KEY_SHUFFLE] ? randomFile() : prefs[KEY_SELECTED];
   }
 
+  /**
+   * Logoyu bir kez <body>'ye ekler. Konumlandirma ve gizleme tamamen CSS'te:
+   * eleman her zaman DOM'da durur, yalnizca .ymin-blocked varken gorunur.
+   * Boylece her gezinmede yeniden olusturmak gerekmez.
+   */
+  function renderLogo() {
+    if (!document.body || document.getElementById("ymin-logo")) return;
+    try {
+      const img = document.createElement("img");
+      img.id = "ymin-logo";
+      img.src = chrome.runtime.getURL(LOGO);
+      img.alt = ""; // Dekoratif: sayfada metin birakmiyoruz.
+      img.decoding = "async";
+      document.body.appendChild(img);
+    } catch (_) {
+      // Eklenti baglami dustuyse logo hic eklenmez.
+    }
+  }
+
   /* ---- Tercihler: localStorage (senkron onbellek) + chrome.storage ---- */
 
   function readCache() {
@@ -353,6 +375,7 @@
     [300, 900, 1800].forEach((delay) =>
       setTimeout(() => {
         ensureSearchVisible();
+        renderLogo();
         stripPlaceholder();
         if (root.classList.contains("ymin-blocked")) focusSearch();
       }, delay)
@@ -386,6 +409,7 @@
     }
     lastPage = page;
 
+    renderLogo();
     stripPlaceholder();
     settle();
 

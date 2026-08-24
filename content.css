@@ -5,6 +5,8 @@
    Gizlenenler      : ana sayfa akisi, abonelikler, sol menu, oneriler,
                       Shorts, yorumlar, reklamlar, promosyon balonlari,
                       arama gecmisi / otomatik tamamlama acilir menusu
+   Arama modunda cubugun hemen ustunde logo.png gosterilir; .ymin-blocked
+   kalkinca gizlenir.
    Kutuya tiklandiginda YouTube'un mavi cercevesi yerine kirmizi bir odak
    cercevesi yanar; kutu ne buyur ne kayar.
    Sayfa zeminine wallpaper.png serilir (adresi content.js'ten
@@ -464,6 +466,46 @@ ytm-comments-entry-point-header-renderer {
   display: none !important;
 }
 
+
+/* ---------------------------------------------------------------------
+   9.1) LOGO — arama modunda cubugun hemen ustunde
+   ---------------------------------------------------------------------
+   Eleman content.js tarafindan bir kez <body>'ye ekleniyor ve orada
+   kaliyor; gorunurlugu yalnizca bu bolum belirliyor. .ymin-blocked
+   kalkinca (arama sonuclari, izleme sayfasi) logo da kayboluyor.
+
+   Konum: ust bar 56px yuksekliginde ve ekranin tam ortasinda duruyor,
+   yani ust kenari "50% + 28px". Logonun alt kenarini oraya sabitleyip
+   yukari dogru buyutuyoruz; boylece cubuk nerede olursa olsun logo hep
+   onun hemen ustunde kalir.
+
+   Boyut hakkinda: logo.png'nin yuksekliginin yalnizca %44'u dolu, ust ve
+   altta simetrik seffaf pay var (olculdu). Bu yuzden max-height: 150px,
+   ekranda ~66px'lik gorunur bir logo demek. Alttaki ~%28'lik seffaf pay da
+   cubukla arasindaki bosluga (~42px) donusuyor; margin-bottom bu yuzden
+   kucuk tutuldu. Logo kirpilmis bir dosyayla degistirilirse max-height'i
+   ~70px'e cekip margin-bottom'u buyutmek gerekir. */
+
+#ymin-logo {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: calc(50% + 28px) !important;
+  z-index: 9998 !important;
+  display: none !important;
+  max-height: 150px !important;
+  max-width: min(440px, 70vw) !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 0 4px !important;
+  transform: translateX(-50%) !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+html.ymin-blocked #ymin-logo {
+  display: block !important;
+}
 
 /* ---------------------------------------------------------------------
    10) AYARLAR ARAYUZU — disli butonu ve cekmece panel
