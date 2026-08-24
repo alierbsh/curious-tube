@@ -241,35 +241,7 @@
     settingsPane.dataset.pane = "settings";
     settingsPane.hidden = true;
 
-    const row = el("div", "ymin-row");
-    const label = el("div", "ymin-row-label");
-    label.appendChild(el("div", "ymin-row-title", "Shuffle Wallpaper"));
-    label.appendChild(
-      el(
-        "div",
-        "ymin-row-sub",
-        "Shows a random wallpaper every time you open the home page. " +
-          "Your own uploads are part of the pool too."
-      )
-    );
-
-    const toggle = el("button", "ymin-switch");
-    toggle.type = "button";
-    toggle.setAttribute("role", "switch");
-    toggle.dataset.role = "shuffle";
-    toggle.appendChild(el("span", "ymin-knob"));
-    toggle.addEventListener("click", () => {
-      const next = !api.getPrefs()[api.KEY_SHUFFLE];
-      api.setPrefs({ [api.KEY_SHUFFLE]: next });
-      // Show the effect immediately; turning it off restores the fixed choice.
-      api.applyWallpaperRef(
-        next ? api.randomRef() : api.getPrefs()[api.KEY_SELECTED]
-      );
-      render();
-    });
-
-    row.append(label, toggle);
-    settingsPane.appendChild(row);
+    SETTINGS_ROWS.forEach((spec) => settingsPane.appendChild(settingRow(spec)));
 
     const usage = el("div", "ymin-usage");
     usage.dataset.role = "usage";
@@ -318,6 +290,97 @@
         " · " + api.getCustomIndex().length + "/" + api.limits.maxCount +
         " custom wallpapers";
     });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Settings rows                                                       */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * The Settings tab, in order. The master switch comes first and is styled
+   * apart from the rest, because it governs everything below it.
+   *
+   * Comments / Description / Shorts read as "show this", so their default of
+   * false is what hides the distraction. Grayscale reads the other way round.
+   */
+  const SETTINGS_ROWS = [
+    {
+      key: api.KEY_ENABLED,
+      title: "Extension Enabled",
+      sub: "Turn this off to browse a completely untouched YouTube.",
+      master: true,
+    },
+    {
+      key: api.KEY_COMMENTS,
+      title: "Comments",
+      sub: "Show the comment section underneath videos.",
+    },
+    {
+      key: api.KEY_DESCRIPTION,
+      title: "Description",
+      sub: "Show the video description and the panels it expands into.",
+    },
+    {
+      key: api.KEY_SHORTS,
+      title: "Shorts",
+      sub: "Show Shorts shelves, Shorts results and the Shorts entry in the guide.",
+    },
+    {
+      key: api.KEY_GRAYSCALE,
+      title: "Grayscale Thumbnails",
+      sub: "Drain the colour out of thumbnails; hovering one brings it back.",
+    },
+    {
+      key: api.KEY_SHUFFLE,
+      title: "Shuffle Wallpaper",
+      sub:
+        "Shows a random wallpaper every time you open the home page. " +
+        "Your own uploads are part of the pool too.",
+      after: (next) =>
+        api.applyWallpaperRef(
+          next ? api.randomRef() : api.getPrefs()[api.KEY_SELECTED]
+        ),
+    },
+  ];
+
+  function valueOf(key) {
+    const current = api.getPrefs();
+    // The master switch is the only preference that defaults to on.
+    return key === api.KEY_ENABLED ? current[key] !== false : Boolean(current[key]);
+  }
+
+  function settingRow(spec) {
+    const row = el("div", "ymin-row" + (spec.master ? " ymin-row-master" : ""));
+    row.dataset.key = spec.key;
+
+    const label = el("div", "ymin-row-label");
+    label.appendChild(el("div", "ymin-row-title", spec.title));
+    label.appendChild(el("div", "ymin-row-sub", spec.sub));
+
+    const toggle = el("button", "ymin-switch");
+    toggle.type = "button";
+    toggle.setAttribute("role", "switch");
+    toggle.appendChild(el("span", "ymin-knob"));
+
+    toggle.addEventListener("click", () => {
+      const next = !valueOf(spec.key);
+      api.setPrefs({ [spec.key]: next });
+
+      if (spec.master) {
+        // YouTube is a large SPA; unwinding a live page by hand is far more
+        // fragile than letting it load once from a clean slate.
+        window.location.reload();
+        return;
+      }
+
+      // setPrefs already re-applied the feature classes, so the page has
+      // updated by now; only the panel still needs refreshing.
+      if (spec.after) spec.after(next);
+      render();
+    });
+
+    row.append(label, toggle);
+    return row;
   }
 
   /* ------------------------------------------------------------------ */
@@ -431,12 +494,19 @@
       btn.setAttribute("aria-pressed", selected ? "true" : "false");
     });
 
-    const shuffleOn = Boolean(current[api.KEY_SHUFFLE]);
-    const toggle = panel.querySelector('[data-role="shuffle"]');
-    toggle.classList.toggle("is-on", shuffleOn);
-    toggle.setAttribute("aria-checked", shuffleOn ? "true" : "false");
+    const enabled = current[api.KEY_ENABLED] !== false;
+    panel.querySelectorAll(".ymin-row[data-key]").forEach((row) => {
+      const key = row.dataset.key;
+      const on = valueOf(key);
+      const toggle = row.querySelector(".ymin-switch");
+      toggle.classList.toggle("is-on", on);
+      toggle.setAttribute("aria-checked", on ? "true" : "false");
+      // While the extension is off the other rows have no effect; say so.
+      row.classList.toggle("is-muted", !enabled && key !== api.KEY_ENABLED);
+    });
 
-    panel.querySelector('[data-role="shuffle-note"]').hidden = !shuffleOn;
+    panel.querySelector('[data-role="shuffle-note"]').hidden =
+      !Boolean(current[api.KEY_SHUFFLE]);
   }
 
   /* ------------------------------------------------------------------ */
@@ -496,7 +566,7 @@
     // The gear is only visible on the blank page (CSS). If the user searches
     // and leaves that page, close the panel that was left open.
     new MutationObserver(() => {
-      if (open && !root.classList.contains("ymin-blocked")) closePanel();
+      if (open && !root.classList.contains("ymin-home")) closePanel();
     }).observe(root, { attributes: true, attributeFilter: ["class"] });
 
     api.onPrefsChange(render);

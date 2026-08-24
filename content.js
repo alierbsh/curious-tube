@@ -79,6 +79,52 @@
   const KEY_SELECTED = "selectedWallpaper";
   const KEY_SHUFFLE = "shuffleWallpaper";
   const KEY_CUSTOM = "customWallpapers";
+  const KEY_ENABLED = "extensionEnabled";
+  const KEY_COMMENTS = "commentsEnabled";
+  const KEY_DESCRIPTION = "descriptionEnabled";
+  const KEY_SHORTS = "shortsEnabled";
+  const KEY_GRAYSCALE = "grayscaleEnabled";
+
+  /**
+   * Feature switches, in the order they appear in the settings panel.
+   *
+   * "hide" flips the polarity: for Comments/Description/Shorts the preference
+   * means "show it", so the class is applied when the preference is false.
+   * Grayscale is the other way round — the class follows the preference.
+   */
+  const FEATURE_CLASSES = [
+    { key: KEY_COMMENTS, className: "ymin-hide-comments", hide: true },
+    { key: KEY_DESCRIPTION, className: "ymin-hide-description", hide: true },
+    { key: KEY_SHORTS, className: "ymin-hide-shorts", hide: true },
+    { key: KEY_GRAYSCALE, className: "ymin-grayscale-thumbnails", hide: false },
+  ];
+
+  /**
+   * The boolean preferences. All of them live in the synchronous cache too:
+   * without that, a disabled extension would still apply everything at
+   * document_start and only undo it once chrome.storage answered — a visible
+   * flash of the very page the user switched off.
+   */
+  const BOOL_KEYS = [
+    KEY_SHUFFLE,
+    KEY_ENABLED,
+    KEY_COMMENTS,
+    KEY_DESCRIPTION,
+    KEY_SHORTS,
+    KEY_GRAYSCALE,
+  ];
+
+  /** Every key this content script reads from storage. */
+  const ALL_KEYS = [
+    KEY_SELECTED,
+    KEY_SHUFFLE,
+    KEY_CUSTOM,
+    KEY_ENABLED,
+    KEY_COMMENTS,
+    KEY_DESCRIPTION,
+    KEY_SHORTS,
+    KEY_GRAYSCALE,
+  ];
 
   /**
    * Wallpapers uploaded by the user.
@@ -123,6 +169,13 @@
   const DEFAULT_PREFS = {
     [KEY_SELECTED]: WALLPAPERS[0].file,
     [KEY_SHUFFLE]: false,
+    // The extension is on out of the box; the distraction blockers default to
+    // hiding, which is the whole point of installing this.
+    [KEY_ENABLED]: true,
+    [KEY_COMMENTS]: false,
+    [KEY_DESCRIPTION]: false,
+    [KEY_SHORTS]: false,
+    [KEY_GRAYSCALE]: false,
   };
 
   /** Search input: covers both the old and the new masthead components. */
@@ -153,6 +206,52 @@
         /* one listener throwing must not stop the others */
       }
     });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Master switch and feature classes                                   */
+  /* ------------------------------------------------------------------ */
+
+  function isEnabled() {
+    return prefs[KEY_ENABLED] !== false;
+  }
+
+  /**
+   * Mirrors the preferences onto <html> as classes. Every rule in
+   * content.css that touches YouTube hangs off .ymin-on, so dropping that one
+   * class disables the entire stylesheet at once — no rule-by-rule teardown.
+   *
+   * The feature classes are gated on the master switch here as well, so a
+   * disabled extension leaves comments, descriptions, Shorts and thumbnail
+   * colours exactly as YouTube shipped them.
+   */
+  function syncFeatureClasses() {
+    const on = isEnabled();
+    root.classList.toggle("ymin-on", on);
+    FEATURE_CLASSES.forEach(({ key, className, hide }) => {
+      const active = hide ? !prefs[key] : Boolean(prefs[key]);
+      root.classList.toggle(className, on && active);
+    });
+  }
+
+  /**
+   * Undoes what the extension added to the page, for the case where it is
+   * switched off in another tab while this one is open. The tab that flips
+   * the switch reloads itself (a clean slate is cheaper than unwinding a live
+   * SPA), but other tabs should not be reloaded from under the user.
+   *
+   * Nodes YouTube itself owns are not restored here — sweep() removed some of
+   * them for good, and they come back on the next navigation anyway.
+   */
+  function teardown() {
+    ["ymin-blocked", "ymin-wallpaper"].forEach((c) => root.classList.remove(c));
+    root.style.removeProperty("--ymin-wallpaper");
+    delete root.dataset.yminPage;
+    ["ymin-logo", "ymin-nav-logo", "ymin-home-link"].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) node.remove();
+    });
+    appliedRef = null;
   }
 
   /* ------------------------------------------------------------------ */
@@ -491,9 +590,9 @@
       if (typeof parsed[KEY_SELECTED] === "string") {
         clean[KEY_SELECTED] = parsed[KEY_SELECTED];
       }
-      if (typeof parsed[KEY_SHUFFLE] === "boolean") {
-        clean[KEY_SHUFFLE] = parsed[KEY_SHUFFLE];
-      }
+      BOOL_KEYS.forEach((key) => {
+        if (typeof parsed[key] === "boolean") clean[key] = parsed[key];
+      });
       return Object.assign({}, DEFAULT_PREFS, clean);
     } catch (_) {
       return null;
@@ -502,14 +601,14 @@
 
   function writeCache() {
     try {
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
-          [KEY_SELECTED]: prefs[KEY_SELECTED],
-          [KEY_SHUFFLE]: Boolean(prefs[KEY_SHUFFLE]),
-          customIds: customIndex.map((c) => c.id),
-        })
-      );
+      const snapshot = { [KEY_SELECTED]: prefs[KEY_SELECTED] };
+      BOOL_KEYS.forEach((key) => {
+        snapshot[key] = key === KEY_ENABLED
+          ? prefs[key] !== false
+          : Boolean(prefs[key]);
+      });
+      snapshot.customIds = customIndex.map((c) => c.id);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(snapshot));
     } catch (_) {
       // In a private window, or with storage disabled, continue without a cache.
     }
@@ -519,6 +618,9 @@
   function setPrefs(patch) {
     prefs = Object.assign({}, prefs, patch);
     writeCache();
+    // Every write goes through here, so this is the one place that has to
+    // re-apply the feature classes; toggles then take effect immediately.
+    syncFeatureClasses();
     try {
       chrome.storage.local.set(patch);
     } catch (_) {
@@ -533,22 +635,51 @@
    */
   function initWallpaper() {
     prefs = readCache() || Object.assign({}, DEFAULT_PREFS);
+    syncFeatureClasses();
+
+    // Nothing is painted while the extension is switched off.
+    if (!isEnabled()) {
+      reconcile();
+      return;
+    }
 
     // Custom images live only in storage and cannot be applied synchronously.
     // If the cache points at one, we wait rather than flashing a built-in
     // image first and swapping it a moment later.
     if (!isCustomRef(resolveRef())) applyWallpaperRef(resolveRef());
+    reconcile();
+  }
 
+  /** Reads the authoritative values from chrome.storage and settles on them. */
+  function reconcile() {
     try {
-      chrome.storage.local.get([KEY_SELECTED, KEY_SHUFFLE, KEY_CUSTOM]).then((stored) => {
+      chrome.storage.local.get(ALL_KEYS).then((stored) => {
         if (!stored) return;
         const wasShuffle = prefs[KEY_SHUFFLE];
+        const wasEnabled = isEnabled();
         customIndex = Array.isArray(stored[KEY_CUSTOM]) ? stored[KEY_CUSTOM] : [];
-        prefs = Object.assign({}, DEFAULT_PREFS, prefs, {
+
+        const incoming = {
           [KEY_SELECTED]: stored[KEY_SELECTED] || prefs[KEY_SELECTED],
-          [KEY_SHUFFLE]: Boolean(stored[KEY_SHUFFLE]),
-        });
+          [KEY_ENABLED]: stored[KEY_ENABLED] !== false,
+        };
+        [KEY_SHUFFLE, KEY_COMMENTS, KEY_DESCRIPTION, KEY_SHORTS, KEY_GRAYSCALE]
+          .forEach((key) => {
+            incoming[key] = Boolean(stored[key]);
+          });
+        prefs = Object.assign({}, DEFAULT_PREFS, prefs, incoming);
+
         writeCache();
+        syncFeatureClasses();
+
+        if (!isEnabled()) {
+          teardown();
+          notify();
+          return;
+        }
+
+        // Coming back from a cache that said "off": draw everything now.
+        if (!wasEnabled) apply();
 
         // If shuffle stayed on we already applied a random image; drawing a
         // second time would produce a visible jump.
@@ -565,18 +696,29 @@
       chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== "local") return;
         let touched = false;
-        for (const key of [KEY_SELECTED, KEY_SHUFFLE]) {
-          if (key in changes) {
-            prefs[key] = changes[key].newValue;
-            touched = true;
-          }
+        for (const key of ALL_KEYS) {
+          if (key === KEY_CUSTOM || !(key in changes)) continue;
+          prefs[key] = changes[key].newValue;
+          touched = true;
         }
         if (KEY_CUSTOM in changes) {
           customIndex = changes[KEY_CUSTOM].newValue || [];
           touched = true;
         }
         if (!touched) return;
+
         writeCache();
+        syncFeatureClasses();
+
+        // The tab that flipped the master switch reloads itself; here we only
+        // make sure this tab stops (or resumes) modifying the page.
+        if (!isEnabled()) {
+          teardown();
+          notify();
+          return;
+        }
+        apply();
+
         if (!prefs[KEY_SHUFFLE] && appliedRef !== prefs[KEY_SELECTED]) {
           applyWallpaperRef(prefs[KEY_SELECTED]);
         }
@@ -653,7 +795,21 @@
 
   function apply() {
     const page = currentPage();
-    if (page === "shorts" && redirectShorts()) return;
+
+    // The gear has to stay reachable even while the extension is off, so its
+    // marker follows the route alone and never the enabled state.
+    root.classList.toggle("ymin-home", page === "blocked");
+    syncFeatureClasses();
+
+    if (!isEnabled()) {
+      teardown();
+      lastPage = page;
+      lastHref = location.href;
+      return;
+    }
+
+    // Shorts URLs are only diverted while Shorts are being hidden.
+    if (page === "shorts" && !prefs[KEY_SHORTS] && redirectShorts()) return;
 
     // Note: there is no "bail out if the URL did not change" early return.
     // At document_start <body> does not exist yet, so the first call cannot
@@ -684,6 +840,7 @@
   /* ------------------------------------------------------------------ */
 
   function sweep(scope) {
+    if (!isEnabled()) return;
     if (!scope || typeof scope.querySelectorAll !== "function") return;
     scope.querySelectorAll(KILL_SELECTORS).forEach((node) => node.remove());
   }
@@ -720,6 +877,12 @@
     WALLPAPERS,
     KEY_SELECTED,
     KEY_SHUFFLE,
+    KEY_ENABLED,
+    KEY_COMMENTS,
+    KEY_DESCRIPTION,
+    KEY_SHORTS,
+    KEY_GRAYSCALE,
+    isEnabled,
     getPrefs: () => Object.assign({}, prefs),
     setPrefs,
     applyWallpaperRef,

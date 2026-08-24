@@ -21,18 +21,18 @@
    we do not delete YouTube's own home link, we only hide the YouTube mark
    inside it and drop our logo in its place (see 9.1). That way the SPA
    navigation bound to that link keeps working exactly as before. */
-ytd-masthead #guide-button,
-#masthead #guide-button,
-ytd-masthead ytd-topbar-logo-renderer #logo-icon,
-ytd-masthead ytd-topbar-logo-renderer yt-icon,
-ytd-masthead ytd-topbar-logo-renderer svg,
-ytd-masthead ytd-topbar-logo-renderer #country-code {
+html.ymin-on ytd-masthead #guide-button,
+html.ymin-on #masthead #guide-button,
+html.ymin-on ytd-masthead ytd-topbar-logo-renderer #logo-icon,
+html.ymin-on ytd-masthead ytd-topbar-logo-renderer yt-icon,
+html.ymin-on ytd-masthead ytd-topbar-logo-renderer svg,
+html.ymin-on ytd-masthead ytd-topbar-logo-renderer #country-code {
   display: none !important;
 }
 
 /* Do not let the link box clip our logo (YouTube may pin its size). */
-ytd-masthead ytd-topbar-logo-renderer,
-ytd-masthead ytd-topbar-logo-renderer a {
+html.ymin-on ytd-masthead ytd-topbar-logo-renderer,
+html.ymin-on ytd-masthead ytd-topbar-logo-renderer a {
   display: flex !important;
   align-items: center !important;
   width: auto !important;
@@ -43,8 +43,8 @@ ytd-masthead ytd-topbar-logo-renderer a {
 /* On the blank page the whole left side is hidden: our big logo is already
    on screen (the two must never collide), and a visible #start would throw
    off the centering of the search bar. */
-html.ymin-blocked ytd-masthead #start.ytd-masthead,
-html.ymin-blocked #masthead #start {
+html.ymin-on.ymin-blocked ytd-masthead #start.ytd-masthead,
+html.ymin-on.ymin-blocked #masthead #start {
   display: none !important;
 }
 
@@ -52,13 +52,13 @@ html.ymin-blocked #masthead #start {
    uses justify-content: center, so a #start that takes up space would push
    the search bar right by half its width. Absolute positioning avoids that
    and keeps the box centered in the viewport. */
-ytd-masthead #container.ytd-masthead,
-#masthead #container {
+html.ymin-on ytd-masthead #container.ytd-masthead,
+html.ymin-on #masthead #container {
   position: relative !important;
 }
 
-html:not(.ymin-blocked) ytd-masthead #start.ytd-masthead,
-html:not(.ymin-blocked) #masthead #start {
+html.ymin-on:not(.ymin-blocked) ytd-masthead #start.ytd-masthead,
+html.ymin-on:not(.ymin-blocked) #masthead #start {
   position: absolute !important;
   top: 0 !important;
   bottom: 0 !important;
@@ -69,34 +69,34 @@ html:not(.ymin-blocked) #masthead #start {
 
 /* On narrow windows the logo must not collide with the search box. */
 @media (max-width: 720px) {
-  html:not(.ymin-blocked) ytd-masthead #start.ytd-masthead,
-  html:not(.ymin-blocked) #masthead #start {
+  html.ymin-on:not(.ymin-blocked) ytd-masthead #start.ytd-masthead,
+  html.ymin-on:not(.ymin-blocked) #masthead #start {
     display: none !important;
   }
 }
 
 /* Right side: create, notifications, avatar, "get the app" and friends. */
-ytd-masthead #end.ytd-masthead,
-ytd-masthead #buttons.ytd-masthead,
-#masthead #end,
-#masthead #buttons,
-ytd-masthead ytd-notification-topbar-button-renderer,
-ytd-masthead ytd-topbar-menu-button-renderer,
-ytd-masthead ytd-button-renderer#button,
-ytd-masthead #voice-search-button,
-ytd-masthead .ytSearchboxComponentVoiceSearchButton,
-ytd-masthead yt-icon-button#voice-search-button {
+html.ymin-on ytd-masthead #end.ytd-masthead,
+html.ymin-on ytd-masthead #buttons.ytd-masthead,
+html.ymin-on #masthead #end,
+html.ymin-on #masthead #buttons,
+html.ymin-on ytd-masthead ytd-notification-topbar-button-renderer,
+html.ymin-on ytd-masthead ytd-topbar-menu-button-renderer,
+html.ymin-on ytd-masthead ytd-button-renderer#button,
+html.ymin-on ytd-masthead #voice-search-button,
+html.ymin-on ytd-masthead .ytSearchboxComponentVoiceSearchButton,
+html.ymin-on ytd-masthead yt-icon-button#voice-search-button {
   display: none !important;
 }
 
 /* Center the search area and give it room to breathe */
-ytd-masthead #container.ytd-masthead,
-#masthead #container {
+html.ymin-on ytd-masthead #container.ytd-masthead,
+html.ymin-on #masthead #container {
   justify-content: center !important;
 }
 
-ytd-masthead #center.ytd-masthead,
-#masthead #center {
+html.ymin-on ytd-masthead #center.ytd-masthead,
+html.ymin-on #masthead #center {
   flex: 0 1 720px !important;
   max-width: 720px !important;
   min-width: 0 !important;
@@ -109,14 +109,14 @@ ytd-masthead #center.ytd-masthead,
    YouTube's own author styles, which could drop custom elements to inline.
    The hiding selectors no longer touch the search box, so we do not force
    display any more — only visibility is guaranteed. */
-ytd-searchbox,
-yt-searchbox,
-#search-form,
-#search-input,
-#search,
-#search-icon-legacy,
-.ytSearchboxComponentHost,
-.ytSearchboxComponentSearchButton {
+html.ymin-on ytd-searchbox,
+html.ymin-on yt-searchbox,
+html.ymin-on #search-form,
+html.ymin-on #search-input,
+html.ymin-on #search,
+html.ymin-on #search-icon-legacy,
+html.ymin-on .ytSearchboxComponentHost,
+html.ymin-on .ytSearchboxComponentSearchButton {
   visibility: visible !important;
 }
 
@@ -142,9 +142,9 @@ yt-searchbox,
 }
 
 /* Unfocused: a neutral border that follows the theme. */
-ytd-masthead #search-form,
-ytd-masthead ytd-searchbox #container.ytd-searchbox,
-ytd-masthead yt-searchbox .ytSearchboxComponentInputBox {
+html.ymin-on ytd-masthead #search-form,
+html.ymin-on ytd-masthead ytd-searchbox #container.ytd-searchbox,
+html.ymin-on ytd-masthead yt-searchbox .ytSearchboxComponentInputBox {
   border-color: var(
     --ytd-searchbox-legacy-border-color,
     var(--yt-spec-10-percent-layer, rgba(128, 128, 128, 0.35))
@@ -157,10 +157,10 @@ ytd-masthead yt-searchbox .ytSearchboxComponentInputBox {
 /* Focused: red border plus a soft halo instead of YouTube's blue. The inset
    ring guarantees the red is visible even when an ancestor clips the outer
    halo. */
-ytd-masthead ytd-searchbox[has-focus] #container.ytd-searchbox,
-ytd-masthead ytd-searchbox #container.ytd-searchbox:focus-within,
-ytd-masthead yt-searchbox .ytSearchboxComponentInputBox:focus-within,
-ytd-masthead #search-form:focus-within {
+html.ymin-on ytd-masthead ytd-searchbox[has-focus] #container.ytd-searchbox,
+html.ymin-on ytd-masthead ytd-searchbox #container.ytd-searchbox:focus-within,
+html.ymin-on ytd-masthead yt-searchbox .ytSearchboxComponentInputBox:focus-within,
+html.ymin-on ytd-masthead #search-form:focus-within {
   border-color: var(--ymin-focus-red) !important;
   box-shadow: inset 0 0 0 1px var(--ymin-focus-red),
     0 0 0 3px var(--ymin-focus-glow) !important;
@@ -168,14 +168,14 @@ ytd-masthead #search-form:focus-within {
 }
 
 /* The input's own focus ring (including the browser outline) */
-ytd-masthead input#search,
-ytd-masthead input#search:focus,
-ytd-masthead input#search:focus-visible,
-ytd-masthead input.ytSearchboxComponentInput,
-ytd-masthead input.ytSearchboxComponentInput:focus,
-ytd-masthead input.ytSearchboxComponentInput:focus-visible,
-ytd-masthead input[name="search_query"]:focus,
-ytd-masthead input[name="search_query"]:focus-visible {
+html.ymin-on ytd-masthead input#search,
+html.ymin-on ytd-masthead input#search:focus,
+html.ymin-on ytd-masthead input#search:focus-visible,
+html.ymin-on ytd-masthead input.ytSearchboxComponentInput,
+html.ymin-on ytd-masthead input.ytSearchboxComponentInput:focus,
+html.ymin-on ytd-masthead input.ytSearchboxComponentInput:focus-visible,
+html.ymin-on ytd-masthead input[name="search_query"]:focus,
+html.ymin-on ytd-masthead input[name="search_query"]:focus-visible {
   outline: none !important;
   box-shadow: none !important;
   border-color: transparent !important;
@@ -187,15 +187,15 @@ ytd-masthead input[name="search_query"]:focus-visible {
    exactly and the button is a separate node. The icon is display:none in
    both states, so it never occupies space — the source of the shift is gone
    without touching padding or width. */
-ytd-masthead ytd-searchbox #search-icon,
-ytd-masthead #search-icon.ytd-searchbox,
-ytd-masthead yt-searchbox .ytSearchboxComponentSearchIcon,
-ytd-masthead .ytSearchboxComponentInputBox > yt-icon:first-child {
+html.ymin-on ytd-masthead ytd-searchbox #search-icon,
+html.ymin-on ytd-masthead #search-icon.ytd-searchbox,
+html.ymin-on ytd-masthead yt-searchbox .ytSearchboxComponentSearchIcon,
+html.ymin-on ytd-masthead .ytSearchboxComponentInputBox > yt-icon:first-child {
   display: none !important;
 }
 
 /* Flatten the thin shadow/line under the masthead */
-#masthead-container.ytd-app {
+html.ymin-on #masthead-container.ytd-app {
   box-shadow: none !important;
   border-bottom: none !important;
 }
@@ -214,18 +214,18 @@ ytd-masthead .ytSearchboxComponentInputBox > yt-icon:first-child {
    invisible or pushed off screen, it adds .ymin-safe to <html> and this whole
    block goes dormant. Worst case the suggestions come back — the search bar
    never disappears. */
-html:not(.ymin-safe) ytd-searchbox tp-yt-iron-dropdown,
-html:not(.ymin-safe) yt-searchbox tp-yt-iron-dropdown,
-html:not(.ymin-safe) tp-yt-iron-dropdown.ytd-searchbox,
-html:not(.ymin-safe) ytd-searchbox #suggestion-dropdown,
-html:not(.ymin-safe) ytd-searchbox-suggestion-renderer,
-html:not(.ymin-safe) ytd-search-suggestions-renderer,
-html:not(.ymin-safe) ytd-masthead [role="listbox"],
-html:not(.ymin-safe) ytd-masthead [class*="SuggestionsContainer"],
-html:not(.ymin-safe) ytd-popup-container tp-yt-iron-dropdown:has(ytd-searchbox-suggestion-renderer),
-html:not(.ymin-safe) .sbdd_b,
-html:not(.ymin-safe) ytm-search-suggestions-renderer,
-html:not(.ymin-safe) .searchbox-suggestions {
+html.ymin-on:not(.ymin-safe) ytd-searchbox tp-yt-iron-dropdown,
+html.ymin-on:not(.ymin-safe) yt-searchbox tp-yt-iron-dropdown,
+html.ymin-on:not(.ymin-safe) tp-yt-iron-dropdown.ytd-searchbox,
+html.ymin-on:not(.ymin-safe) ytd-searchbox #suggestion-dropdown,
+html.ymin-on:not(.ymin-safe) ytd-searchbox-suggestion-renderer,
+html.ymin-on:not(.ymin-safe) ytd-search-suggestions-renderer,
+html.ymin-on:not(.ymin-safe) ytd-masthead [role="listbox"],
+html.ymin-on:not(.ymin-safe) ytd-masthead [class*="SuggestionsContainer"],
+html.ymin-on:not(.ymin-safe) ytd-popup-container tp-yt-iron-dropdown:has(ytd-searchbox-suggestion-renderer),
+html.ymin-on:not(.ymin-safe) .sbdd_b,
+html.ymin-on:not(.ymin-safe) ytm-search-suggestions-renderer,
+html.ymin-on:not(.ymin-safe) .searchbox-suggestions {
   display: none !important;
 }
 
@@ -233,28 +233,28 @@ html:not(.ymin-safe) .searchbox-suggestions {
    2) GUIDE — removed entirely, content moves to the left edge
    --------------------------------------------------------------------- */
 
-ytd-app #guide,
-ytd-app tp-yt-app-drawer#guide,
-ytd-app #guide-wrapper,
-ytd-app #guide-content,
-ytd-app #guide-inner-content,
-ytd-mini-guide-renderer,
-ytd-guide-renderer,
-ytd-app tp-yt-app-drawer #contentContainer {
+html.ymin-on ytd-app #guide,
+html.ymin-on ytd-app tp-yt-app-drawer#guide,
+html.ymin-on ytd-app #guide-wrapper,
+html.ymin-on ytd-app #guide-content,
+html.ymin-on ytd-app #guide-inner-content,
+html.ymin-on ytd-mini-guide-renderer,
+html.ymin-on ytd-guide-renderer,
+html.ymin-on ytd-app tp-yt-app-drawer #contentContainer {
   display: none !important;
 }
 
-tp-yt-app-drawer#guide {
+html.ymin-on tp-yt-app-drawer#guide {
   --app-drawer-width: 0px !important;
 }
 
 /* Close the dead space the guide leaves behind */
-ytd-app #page-manager.ytd-app,
-ytd-page-manager#page-manager {
+html.ymin-on ytd-app #page-manager.ytd-app,
+html.ymin-on ytd-page-manager#page-manager {
   margin-left: 0 !important;
 }
 
-ytd-app ytd-mini-guide-renderer + #page-manager {
+html.ymin-on ytd-app ytd-mini-guide-renderer + #page-manager {
   margin-left: 0 !important;
 }
 
@@ -262,20 +262,20 @@ ytd-app ytd-mini-guide-renderer + #page-manager {
    3) HOME / SUBSCRIPTIONS / EXPLORE / TRENDING — an entirely blank page
    --------------------------------------------------------------------- */
 
-ytd-browse[page-subtype="home"],
-ytd-browse[page-subtype="subscriptions"],
-ytd-browse[page-subtype="trending"],
-ytd-browse[page-subtype="explore"],
-ytd-browse[page-subtype="channels"],
-ytd-browse[page-subtype="storefront"] {
+html.ymin-on ytd-browse[page-subtype="home"],
+html.ymin-on ytd-browse[page-subtype="subscriptions"],
+html.ymin-on ytd-browse[page-subtype="trending"],
+html.ymin-on ytd-browse[page-subtype="explore"],
+html.ymin-on ytd-browse[page-subtype="channels"],
+html.ymin-on ytd-browse[page-subtype="storefront"] {
   display: none !important;
 }
 
 /* content.js empties the page completely once it detects a blocked route */
-html.ymin-blocked ytd-page-manager,
-html.ymin-blocked #page-manager,
-html.ymin-blocked ytd-browse,
-html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
+html.ymin-on.ymin-blocked ytd-page-manager,
+html.ymin-on.ymin-blocked #page-manager,
+html.ymin-on.ymin-blocked ytd-browse,
+html.ymin-on.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
   display: none !important;
 }
 
@@ -288,7 +288,7 @@ html.ymin-blocked #content.ytd-app > *:not(#masthead-container) {
    translateY(50vh - 28px), which assumed the masthead is 56px tall. The bar
    now stays dead center whatever its height and can never be pushed off
    screen. z-index guarantees it stays above any leftovers. */
-html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app {
+html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app {
   top: 50% !important;
   left: 50% !important;
   right: auto !important;
@@ -300,18 +300,18 @@ html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app {
 }
 
 /* The centered bar should not read as a "bar": make its ground transparent. */
-html.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app,
-html.ymin-blocked:not(.ymin-safe) ytd-masthead,
-html.ymin-blocked:not(.ymin-safe) ytd-masthead #container.ytd-masthead,
-html.ymin-blocked:not(.ymin-safe) #masthead #container {
+html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app,
+html.ymin-on.ymin-blocked:not(.ymin-safe) ytd-masthead,
+html.ymin-on.ymin-blocked:not(.ymin-safe) ytd-masthead #container.ytd-masthead,
+html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead #container {
   background: transparent !important;
 }
 
 /* Widen the box like a search engine home page and scale it up slightly.
    scale is used instead of height: it works on both the old (ytd-searchbox)
    and the new (yt-searchbox) component without breaking inner alignment. */
-html.ymin-blocked:not(.ymin-safe) ytd-masthead #center.ytd-masthead,
-html.ymin-blocked:not(.ymin-safe) #masthead #center {
+html.ymin-on.ymin-blocked:not(.ymin-safe) ytd-masthead #center.ytd-masthead,
+html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead #center {
   flex: 0 1 584px !important;
   max-width: 584px !important;
   scale: 1.08;
@@ -321,18 +321,33 @@ html.ymin-blocked:not(.ymin-safe) #masthead #center {
    4) SHORTS — ignored everywhere
    --------------------------------------------------------------------- */
 
-ytd-reel-shelf-renderer,
-ytd-rich-shelf-renderer[is-shorts],
-ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
-ytm-shorts-lockup-view-model,
-ytm-shorts-lockup-view-model-v2,
-ytd-shorts,
-ytd-video-renderer:has(a[href^="/shorts/"]),
-ytd-grid-video-renderer:has(a[href^="/shorts/"]),
-ytd-rich-item-renderer:has(a[href^="/shorts/"]),
-ytd-compact-video-renderer:has(a[href^="/shorts/"]),
-yt-chip-cloud-chip-renderer:has([title="Shorts"]),
-a[href^="/shorts/"] {
+/* Everything here hangs off .ymin-hide-shorts, which content.js toggles from
+   the "Shorts" preference. Turning it off restores YouTube's own behaviour
+   without a reload; /shorts/ URLs are only redirected while it is on. */
+
+/* Shelves on home, subscriptions and search results */
+html.ymin-on.ymin-hide-shorts ytd-reel-shelf-renderer,
+html.ymin-on.ymin-hide-shorts ytd-rich-shelf-renderer[is-shorts],
+html.ymin-on.ymin-hide-shorts ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html.ymin-on.ymin-hide-shorts ytd-item-section-renderer:has(ytd-reel-shelf-renderer),
+html.ymin-on.ymin-hide-shorts grid-shelf-view-model,
+html.ymin-on.ymin-hide-shorts ytd-shorts,
+html.ymin-on.ymin-hide-shorts ytm-shorts-lockup-view-model,
+html.ymin-on.ymin-hide-shorts ytm-shorts-lockup-view-model-v2,
+
+/* Individual results that point at a Short */
+html.ymin-on.ymin-hide-shorts ytd-video-renderer:has(a[href^="/shorts/"]),
+html.ymin-on.ymin-hide-shorts ytd-grid-video-renderer:has(a[href^="/shorts/"]),
+html.ymin-on.ymin-hide-shorts ytd-rich-item-renderer:has(a[href^="/shorts/"]),
+html.ymin-on.ymin-hide-shorts ytd-compact-video-renderer:has(a[href^="/shorts/"]),
+html.ymin-on.ymin-hide-shorts yt-chip-cloud-chip-renderer:has([title="Shorts"]),
+html.ymin-on.ymin-hide-shorts a[href^="/shorts/"],
+
+/* The Shorts entry in the guide and the mini guide */
+html.ymin-on.ymin-hide-shorts ytd-guide-entry-renderer:has(a[title="Shorts"]),
+html.ymin-on.ymin-hide-shorts ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+html.ymin-on.ymin-hide-shorts ytd-guide-entry-renderer:has(a[href="/shorts"]),
+html.ymin-on.ymin-hide-shorts ytm-pivot-bar-item-renderer:has([aria-label="Shorts"]) {
   display: none !important;
 }
 
@@ -341,55 +356,79 @@ a[href^="/shorts/"] {
    --------------------------------------------------------------------- */
 
 /* The "Up next" / recommended videos column on the right */
-#secondary.ytd-watch-flexy,
-#secondary-inner.ytd-watch-flexy,
-#related.ytd-watch-flexy,
-ytd-watch-next-secondary-results-renderer,
-ytd-compact-video-renderer,
-ytd-compact-radio-renderer,
-ytd-compact-playlist-renderer,
-ytd-item-section-renderer.ytd-watch-next-secondary-results-renderer {
+html.ymin-on #secondary.ytd-watch-flexy,
+html.ymin-on #secondary-inner.ytd-watch-flexy,
+html.ymin-on #related.ytd-watch-flexy,
+html.ymin-on ytd-watch-next-secondary-results-renderer,
+html.ymin-on ytd-compact-video-renderer,
+html.ymin-on ytd-compact-radio-renderer,
+html.ymin-on ytd-compact-playlist-renderer,
+html.ymin-on ytd-item-section-renderer.ytd-watch-next-secondary-results-renderer {
   display: none !important;
 }
 
-/* Comments, merch shelf, ticket shelf, donation box, topic chips */
-ytd-comments#comments,
-#comments.ytd-watch-flexy,
-ytd-merch-shelf-renderer,
-ytd-ticket-shelf-renderer,
-ytd-donation-shelf-renderer,
-ytd-video-description-music-section-renderer,
-ytd-video-description-transcript-section-renderer,
-#chips.ytd-watch-flexy,
-#clarify-box.ytd-watch-flexy,
-ytd-info-panel-container-renderer {
+/* Merch shelf, ticket shelf, donation box, topic chips: always hidden. */
+html.ymin-on ytd-merch-shelf-renderer,
+html.ymin-on ytd-ticket-shelf-renderer,
+html.ymin-on ytd-donation-shelf-renderer,
+html.ymin-on #chips.ytd-watch-flexy,
+html.ymin-on #clarify-box.ytd-watch-flexy,
+html.ymin-on ytd-info-panel-container-renderer {
+  display: none !important;
+}
+
+/* Comments follow the "Comments" preference through .ymin-hide-comments.
+   The class is toggled live, so the section appears or disappears while the
+   video keeps playing — no reload involved. */
+html.ymin-on.ymin-hide-comments ytd-comments#comments,
+html.ymin-on.ymin-hide-comments #comments.ytd-watch-flexy,
+html.ymin-on.ymin-hide-comments ytd-item-section-renderer#comments,
+html.ymin-on.ymin-hide-comments #comments-section,
+html.ymin-on.ymin-hide-comments ytm-comments-entry-point-header-renderer,
+html.ymin-on.ymin-hide-comments ytm-item-section-renderer[section-identifier="comment-item-section"] {
+  display: none !important;
+}
+
+/* The video description follows the "Description" preference. YouTube spreads
+   it across a few elements depending on the layout, so each variant is
+   listed; hiding an element that does not exist costs nothing. */
+html.ymin-on.ymin-hide-description ytd-watch-metadata #description,
+html.ymin-on.ymin-hide-description #description.ytd-watch-metadata,
+html.ymin-on.ymin-hide-description #description-inner,
+html.ymin-on.ymin-hide-description ytd-expander#description,
+html.ymin-on.ymin-hide-description #bottom-row.ytd-watch-metadata,
+html.ymin-on.ymin-hide-description ytd-structured-description-content-renderer,
+html.ymin-on.ymin-hide-description ytd-video-description-music-section-renderer,
+html.ymin-on.ymin-hide-description ytd-video-description-transcript-section-renderer,
+html.ymin-on.ymin-hide-description ytd-video-secondary-info-renderer #description,
+html.ymin-on.ymin-hide-description ytm-expandable-video-description-body-renderer {
   display: none !important;
 }
 
 /* End-screen cards, the pause ad and suggestion bubbles over the player */
-.ytp-endscreen-content,
-.html5-endscreen,
-.ytp-videowall-still,
-.ytp-ce-element,
-.ytp-ce-covering-overlay,
-.ytp-cards-teaser,
-.ytp-cards-button,
-.ytp-pause-overlay,
-.ytp-pause-overlay-container,
-.ytp-suggested-action,
-.ytp-suggested-action-badge,
-.iv-branding,
-.annotation {
+html.ymin-on .ytp-endscreen-content,
+html.ymin-on .html5-endscreen,
+html.ymin-on .ytp-videowall-still,
+html.ymin-on .ytp-ce-element,
+html.ymin-on .ytp-ce-covering-overlay,
+html.ymin-on .ytp-cards-teaser,
+html.ymin-on .ytp-cards-button,
+html.ymin-on .ytp-pause-overlay,
+html.ymin-on .ytp-pause-overlay-container,
+html.ymin-on .ytp-suggested-action,
+html.ymin-on .ytp-suggested-action-badge,
+html.ymin-on .iv-branding,
+html.ymin-on .annotation {
   display: none !important;
 }
 
 /* With the right column gone, center the video column */
-ytd-watch-flexy #primary.ytd-watch-flexy,
-ytd-watch-flexy #primary-inner.ytd-watch-flexy {
+html.ymin-on ytd-watch-flexy #primary.ytd-watch-flexy,
+html.ymin-on ytd-watch-flexy #primary-inner.ytd-watch-flexy {
   max-width: none !important;
 }
 
-ytd-watch-flexy #columns.ytd-watch-flexy {
+html.ymin-on ytd-watch-flexy #columns.ytd-watch-flexy {
   max-width: 1280px !important;
   margin: 0 auto !important;
 }
@@ -398,14 +437,14 @@ ytd-watch-flexy #columns.ytd-watch-flexy {
    6) SEARCH RESULTS — real results only; shelves and ads go
    --------------------------------------------------------------------- */
 
-ytd-search ytd-shelf-renderer,
-ytd-search ytd-horizontal-card-list-renderer,
-ytd-search ytd-universal-watch-card-renderer,
-ytd-search-pyv-renderer,
-ytd-promoted-sparkles-web-renderer,
-ytd-promoted-sparkles-text-search-renderer,
-ytd-promoted-video-renderer,
-ytd-carousel-ad-renderer {
+html.ymin-on ytd-search ytd-shelf-renderer,
+html.ymin-on ytd-search ytd-horizontal-card-list-renderer,
+html.ymin-on ytd-search ytd-universal-watch-card-renderer,
+html.ymin-on ytd-search-pyv-renderer,
+html.ymin-on ytd-promoted-sparkles-web-renderer,
+html.ymin-on ytd-promoted-sparkles-text-search-renderer,
+html.ymin-on ytd-promoted-video-renderer,
+html.ymin-on ytd-carousel-ad-renderer {
   display: none !important;
 }
 
@@ -413,19 +452,19 @@ ytd-carousel-ad-renderer {
    7) ADS AND PROMOTIONS — general cleanup
    --------------------------------------------------------------------- */
 
-ytd-ad-slot-renderer,
-ytd-in-feed-ad-layout-renderer,
-ytd-banner-promo-renderer,
-ytd-statement-banner-renderer,
-ytd-mealbar-promo-renderer,
-ytd-popup-container tp-yt-paper-dialog:has(ytd-mealbar-promo-renderer),
-yt-mealbar-promo-renderer,
-#player-ads,
-#masthead-ad,
-#offer-module,
-ytd-brand-video-shelf-renderer,
-ytd-brand-video-singleton-renderer,
-tp-yt-iron-overlay-backdrop[opened] {
+html.ymin-on ytd-ad-slot-renderer,
+html.ymin-on ytd-in-feed-ad-layout-renderer,
+html.ymin-on ytd-banner-promo-renderer,
+html.ymin-on ytd-statement-banner-renderer,
+html.ymin-on ytd-mealbar-promo-renderer,
+html.ymin-on ytd-popup-container tp-yt-paper-dialog:has(ytd-mealbar-promo-renderer),
+html.ymin-on yt-mealbar-promo-renderer,
+html.ymin-on #player-ads,
+html.ymin-on #masthead-ad,
+html.ymin-on #offer-module,
+html.ymin-on ytd-brand-video-shelf-renderer,
+html.ymin-on ytd-brand-video-singleton-renderer,
+html.ymin-on tp-yt-iron-overlay-backdrop[opened] {
   display: none !important;
 }
 
@@ -456,7 +495,7 @@ tp-yt-iron-overlay-backdrop[opened] {
    needs a width >= 146.5vh; 1.3 x 146.5 = 190). Unless that second value
    kicks in, the behaviour is identical to a plain 130%. */
 
-html.ymin-wallpaper {
+html.ymin-on.ymin-wallpaper {
   background-image: var(--ymin-wallpaper) !important;
   /* Every wallpaper has its own composition; content.js writes per-image
      values into --ymin-wallpaper-size / -position. When the catalog gives no
@@ -471,7 +510,7 @@ html.ymin-wallpaper {
    without it the white result titles become unreadable over the brighter
    areas. The blank page has no scrim, so the image shows at full strength.
    Deleting this rule removes the scrim. */
-html.ymin-wallpaper:not(.ymin-blocked) {
+html.ymin-on.ymin-wallpaper:not(.ymin-blocked) {
   background-image: linear-gradient(
       rgba(0, 0, 0, 0.55),
       rgba(0, 0, 0, 0.55)
@@ -482,34 +521,66 @@ html.ymin-wallpaper:not(.ymin-blocked) {
 /* Do not let YouTube's opaque grounds cover the image. Only PAGE-level
    containers are made transparent; the video player, dropdowns and the like
    keep their own backgrounds. */
-html.ymin-wallpaper body,
-html.ymin-wallpaper ytd-app,
-html.ymin-wallpaper #content.ytd-app,
-html.ymin-wallpaper ytd-page-manager,
-html.ymin-wallpaper #page-manager,
-html.ymin-wallpaper ytd-browse,
-html.ymin-wallpaper ytd-search,
-html.ymin-wallpaper ytd-watch-flexy,
-html.ymin-wallpaper ytd-two-column-search-results-renderer,
-html.ymin-wallpaper #primary.ytd-watch-flexy,
-html.ymin-wallpaper #masthead-container.ytd-app,
-html.ymin-wallpaper ytd-masthead,
-html.ymin-wallpaper ytd-masthead #container.ytd-masthead,
-html.ymin-wallpaper #masthead #container {
+html.ymin-on.ymin-wallpaper body,
+html.ymin-on.ymin-wallpaper ytd-app,
+html.ymin-on.ymin-wallpaper #content.ytd-app,
+html.ymin-on.ymin-wallpaper ytd-page-manager,
+html.ymin-on.ymin-wallpaper #page-manager,
+html.ymin-on.ymin-wallpaper ytd-browse,
+html.ymin-on.ymin-wallpaper ytd-search,
+html.ymin-on.ymin-wallpaper ytd-watch-flexy,
+html.ymin-on.ymin-wallpaper ytd-two-column-search-results-renderer,
+html.ymin-on.ymin-wallpaper #primary.ytd-watch-flexy,
+html.ymin-on.ymin-wallpaper #masthead-container.ytd-app,
+html.ymin-on.ymin-wallpaper ytd-masthead,
+html.ymin-on.ymin-wallpaper ytd-masthead #container.ytd-masthead,
+html.ymin-on.ymin-wallpaper #masthead #container {
   background: transparent !important;
+}
+
+/* ---------------------------------------------------------------------
+   8.1) GRAYSCALE THUMBNAILS — takes the edge off clickbait
+   ---------------------------------------------------------------------
+   Driven by the "Grayscale Thumbnails" preference via
+   .ymin-grayscale-thumbnails. Oversaturated thumbnails are what pull the eye,
+   so draining the colour makes the page much quieter to scan. Hovering a
+   thumbnail eases it back to full colour, so you can still judge what you are
+   about to open.
+
+   filter is a paint-level property: it never affects layout, so nothing
+   shifts when the setting is toggled. */
+
+html.ymin-on.ymin-grayscale-thumbnails ytd-thumbnail img,
+html.ymin-on.ymin-grayscale-thumbnails ytd-playlist-thumbnail img,
+html.ymin-on.ymin-grayscale-thumbnails yt-image img,
+html.ymin-on.ymin-grayscale-thumbnails .yt-core-image,
+html.ymin-on.ymin-grayscale-thumbnails .ytp-videowall-still-image,
+html.ymin-on.ymin-grayscale-thumbnails ytm-thumbnail-cover img {
+  filter: grayscale(100%) !important;
+  transition: filter 320ms ease !important;
+}
+
+html.ymin-on.ymin-grayscale-thumbnails ytd-thumbnail:hover img,
+html.ymin-on.ymin-grayscale-thumbnails ytd-playlist-thumbnail:hover img,
+html.ymin-on.ymin-grayscale-thumbnails yt-image:hover img,
+html.ymin-on.ymin-grayscale-thumbnails a:hover .yt-core-image,
+html.ymin-on.ymin-grayscale-thumbnails ytd-rich-item-renderer:hover .yt-core-image,
+html.ymin-on.ymin-grayscale-thumbnails ytd-video-renderer:hover .yt-core-image,
+html.ymin-on.ymin-grayscale-thumbnails ytd-compact-video-renderer:hover .yt-core-image,
+html.ymin-on.ymin-grayscale-thumbnails .yt-core-image:hover {
+  filter: grayscale(0%) !important;
 }
 
 /* ---------------------------------------------------------------------
    9) MOBILE (m.youtube.com) — basic simplification
    --------------------------------------------------------------------- */
 
-ytm-pivot-bar-renderer,
-.pivot-bar-container,
-ytm-rich-grid-renderer,
-ytm-companion-slot,
-ytm-item-section-renderer:has(ytm-shorts-lockup-view-model),
-ytm-watch-next-secondary-results-renderer,
-ytm-comments-entry-point-header-renderer {
+html.ymin-on ytm-pivot-bar-renderer,
+html.ymin-on .pivot-bar-container,
+html.ymin-on ytm-rich-grid-renderer,
+html.ymin-on ytm-companion-slot,
+html.ymin-on ytm-item-section-renderer:has(ytm-shorts-lockup-view-model),
+html.ymin-on ytm-watch-next-secondary-results-renderer {
   display: none !important;
 }
 
@@ -532,7 +603,7 @@ ytm-comments-entry-point-header-renderer {
    If the logo is replaced with a cropped file, drop max-height to ~70px and
    raise margin-bottom. */
 
-#ymin-logo {
+html.ymin-on #ymin-logo {
   position: fixed !important;
   left: 50% !important;
   bottom: calc(50% + 28px) !important;
@@ -549,7 +620,7 @@ ytm-comments-entry-point-header-renderer {
   user-select: none !important;
 }
 
-html.ymin-blocked #ymin-logo {
+html.ymin-on.ymin-blocked #ymin-logo {
   display: block !important;
 }
 
@@ -562,7 +633,7 @@ html.ymin-blocked #ymin-logo {
    visible height to ~24px — the same size as YouTube's own logo.
    object-fit: contain preserves the aspect ratio, so nothing stretches. */
 
-#ymin-nav-logo {
+html.ymin-on #ymin-nav-logo {
   display: block !important;
   width: auto !important;
   height: 54px !important;
@@ -573,13 +644,13 @@ html.ymin-blocked #ymin-logo {
 /* On the blank page the big logo takes over, so this one is hidden. #start
    is already hidden there; this rule is a backstop (e.g. when the link was
    not found and our fallback link is used). */
-html.ymin-blocked #ymin-nav-logo,
-html.ymin-blocked #ymin-home-link {
+html.ymin-on.ymin-blocked #ymin-nav-logo,
+html.ymin-on.ymin-blocked #ymin-home-link {
   display: none !important;
 }
 
 /* The fallback link built when YouTube's logo link cannot be found. */
-#ymin-home-link {
+html.ymin-on #ymin-home-link {
   display: flex !important;
   align-items: center !important;
   margin-right: 8px !important;
@@ -620,8 +691,19 @@ html.ymin-blocked #ymin-home-link {
   transition: opacity 160ms ease, transform 220ms ease, color 160ms ease;
 }
 
-html.ymin-blocked .ymin-gear {
+/* Note the class: .ymin-home follows the route, not the enabled state. If it
+   were gated on .ymin-on, switching the extension off would also remove the
+   only way to switch it back on. */
+html.ymin-home .ymin-gear {
   display: flex !important;
+}
+
+/* With the extension off, YouTube's own masthead occupies the top-right
+   corner, so the gear moves down out of its way rather than sitting on top of
+   the account buttons. */
+html.ymin-home:not(.ymin-on) .ymin-gear {
+  top: auto !important;
+  bottom: 24px !important;
 }
 
 .ymin-gear:hover,
@@ -936,6 +1018,31 @@ html.ymin-blocked .ymin-gear {
 }
 
 /* --- Settings row and switch ------------------------------------------- */
+
+/* The master switch is separated from the rows it governs. */
+.ymin-row-master {
+  margin-bottom: 6px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.ymin-row-master + .ymin-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-top: 4px !important;
+}
+
+.ymin-row-master .ymin-row-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+/* With the extension off the rows below it change nothing, so they read as
+   inactive — while still being usable, so the state can be set in advance. */
+.ymin-row.is-muted {
+  opacity: 0.45;
+}
 
 .ymin-row {
   display: flex !important;
