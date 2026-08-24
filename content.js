@@ -69,6 +69,7 @@
     { file: "wallpapers/wallpaper-7.jpg", label: "Duvar kagidi 7" },
     { file: "wallpapers/wallpaper-8.jpg", label: "Duvar kagidi 8" },
     { file: "wallpapers/wallpaper-9.jpg", label: "Duvar kagidi 9" },
+    { file: "wallpapers/wallpaper-10.jpg", label: "Duvar kagidi 10" },
   ];
 
   /** Arama modunda cubugun ustunde gosterilen logo. */
@@ -77,6 +78,38 @@
   /** chrome.storage.local anahtarlari. */
   const KEY_SELECTED = "selectedWallpaper";
   const KEY_SHUFFLE = "shuffleWallpaper";
+  const KEY_CUSTOM = "customWallpapers";
+
+  /**
+   * Kullanicinin yukledigi duvar kagitlari.
+   *
+   * Depolama duzeni bilerek ikiye ayrildi:
+   *   customWallpapers      -> yalnizca ust veri dizisi [{id, bytes, addedAt}]
+   *   ymin:custom:<id>      -> o gorselin base64 verisi (ayri anahtar)
+   *
+   * Boylece sayfa acilirken TUM gorseller belleğe alinmiyor; sadece secili
+   * olanin anahtari okunuyor. Hepsi tek bir dizide dursaydi her okuma
+   * megabaytlarca base64'u cozmek zorunda kalirdi.
+   */
+  const CUSTOM_PREFIX = "custom:";
+  const CUSTOM_DATA_PREFIX = "ymin:custom:";
+
+  /** Kota korumasi (7. madde). Degerler muhafazakar secildi. */
+  const MAX_CUSTOM_COUNT = 12;
+  const MAX_ITEM_BYTES = 3 * 1024 * 1024; // tek gorsel icin tavan
+  const QUOTA_SAFETY_BYTES = 512 * 1024; // depoda daima bos kalacak pay
+
+  function isCustomRef(ref) {
+    return typeof ref === "string" && ref.startsWith(CUSTOM_PREFIX);
+  }
+
+  function customIdOf(ref) {
+    return ref.slice(CUSTOM_PREFIX.length);
+  }
+
+  function customDataKey(ref) {
+    return CUSTOM_DATA_PREFIX + (isCustomRef(ref) ? customIdOf(ref) : ref);
+  }
 
   /**
    * Tercihlerin sayfa yerel kopyasi. chrome.storage ASENKRON oldugu icin
@@ -103,7 +136,10 @@
 
   /** Yururlukteki tercihler ve o an ekranda olan duvar kagidi. */
   let prefs = Object.assign({}, DEFAULT_PREFS);
-  let appliedFile = null;
+  let appliedRef = null;
+
+  /** Kullanici duvar kagitlarinin ust verisi (base64 burada DEGIL). */
+  let customIndex = [];
 
   /** Tercih degisince haberdar olacaklar (ayarlar arayuzu). */
   const prefListeners = [];
@@ -195,19 +231,46 @@
    * --ymin-wallpaper degiskenine yazip bicimlendirmeyi (cover, fixed, ...)
    * CSS'e birakiyoruz.
    */
-  function applyWallpaperFile(file) {
-    const entry = entryFor(file);
+  function setBackground(url, entry) {
+    root.style.setProperty("--ymin-wallpaper", 'url("' + url + '")');
+    root.style.setProperty("--ymin-wallpaper-size", entry.size || "cover");
+    root.style.setProperty(
+      "--ymin-wallpaper-position",
+      entry.position || "center"
+    );
+    root.classList.add("ymin-wallpaper");
+  }
+
+  /**
+   * Duvar kagidini uygular. ref iki bicimden biri olabilir:
+   *   "wallpapers/x.jpg" -> eklenti icindeki yerlesik gorsel
+   *   "custom:<id>"      -> kullanicinin yukledigi, storage'daki base64
+   *
+   * Ozel gorseller storage'dan okunmak zorunda oldugu icin bu yol asenkron;
+   * yerlesikler eskisi gibi aninda uygulanir.
+   */
+  function applyWallpaperRef(ref) {
     try {
+      if (isCustomRef(ref)) {
+        const key = customDataKey(ref);
+        chrome.storage.local.get(key).then((res) => {
+          const dataUrl = res && res[key];
+          if (!dataUrl) {
+            // Veri silinmis ama secim kalmis: yerlesike don.
+            applyWallpaperRef(WALLPAPERS[0].file);
+            return;
+          }
+          setBackground(dataUrl, {});
+          appliedRef = ref;
+        }, noop);
+        return;
+      }
+
+      const entry = entryFor(ref);
       const url = chrome.runtime.getURL(entry.file);
       if (!url) return;
-      root.style.setProperty("--ymin-wallpaper", 'url("' + url + '")');
-      root.style.setProperty("--ymin-wallpaper-size", entry.size || "cover");
-      root.style.setProperty(
-        "--ymin-wallpaper-position",
-        entry.position || "center"
-      );
-      root.classList.add("ymin-wallpaper");
-      appliedFile = entry.file;
+      setBackground(url, entry);
+      appliedRef = entry.file;
     } catch (_) {
       // Eklenti yeniden yuklendiginde eski sekmelerde runtime baglami duser;
       // bu durumda gorseli hic uygulamayip stok gorunumde kaliriz.
@@ -215,21 +278,125 @@
     }
   }
 
+  function noop() {}
+
   /** Katalogda olmayan bir dosya adi gelirse ilk gorsele duseriz. */
   function entryFor(file) {
     return WALLPAPERS.find((w) => w.file === file) || WALLPAPERS[0];
   }
 
-  /** Karisik mod: mumkunse su an ekranda olandan farkli birini sec. */
-  function randomFile() {
-    const pool = WALLPAPERS.filter((w) => w.file !== appliedFile);
-    const list = pool.length ? pool : WALLPAPERS;
-    return list[Math.floor(Math.random() * list.length)].file;
+  /** Karisik havuz: yerlesikler + kullanicinin yukledikleri (6. madde). */
+  function shufflePool() {
+    return WALLPAPERS.map((w) => w.file).concat(
+      customIndex.map((c) => CUSTOM_PREFIX + c.id)
+    );
   }
 
-  /** Tercihlere gore hangi dosyanin gosterilecegi. */
-  function resolveFile() {
-    return prefs[KEY_SHUFFLE] ? randomFile() : prefs[KEY_SELECTED];
+  /** Karisik mod: mumkunse su an ekranda olandan farkli birini sec. */
+  function randomRef() {
+    const all = shufflePool();
+    const pool = all.filter((ref) => ref !== appliedRef);
+    const list = pool.length ? pool : all;
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  /** Tercihlere gore hangi gorselin gosterilecegi. */
+  function resolveRef() {
+    return prefs[KEY_SHUFFLE] ? randomRef() : prefs[KEY_SELECTED];
+  }
+
+  /* ---- Kullanici duvar kagitlari: ekleme / silme / kota --------------- */
+
+  function quotaLimit() {
+    const local = chrome.storage.local;
+    return (local && local.QUOTA_BYTES) || 10 * 1024 * 1024;
+  }
+
+  /**
+   * Base64 gorseli depoya ekler. Kota asilirsa YAZMADAN once reddeder;
+   * boylece storage yarim kalmis bir kayitla dolmaz. Hata kodlari arayuzde
+   * kullaniciya anlasilir bir mesaja cevrilir.
+   */
+  function addCustomWallpaper(dataUrl) {
+    if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
+      return Promise.resolve({ ok: false, error: "invalid" });
+    }
+    if (customIndex.length >= MAX_CUSTOM_COUNT) {
+      return Promise.resolve({ ok: false, error: "count", max: MAX_CUSTOM_COUNT });
+    }
+
+    const bytes = dataUrl.length;
+    if (bytes > MAX_ITEM_BYTES) {
+      return Promise.resolve({ ok: false, error: "size", bytes: bytes });
+    }
+
+    return chrome.storage.local
+      .getBytesInUse(null)
+      .then((used) => {
+        if (used + bytes + QUOTA_SAFETY_BYTES > quotaLimit()) {
+          return { ok: false, error: "quota", used: used, limit: quotaLimit() };
+        }
+
+        const id =
+          Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        const meta = { id: id, bytes: bytes, addedAt: Date.now() };
+        const nextIndex = customIndex.concat([meta]);
+        const patch = {};
+        patch[CUSTOM_DATA_PREFIX + id] = dataUrl;
+        patch[KEY_CUSTOM] = nextIndex;
+
+        return chrome.storage.local.set(patch).then(
+          () => {
+            customIndex = nextIndex;
+            writeCache();
+            return { ok: true, id: id, ref: CUSTOM_PREFIX + id };
+          },
+          () => ({ ok: false, error: "quota" })
+        );
+      })
+      .catch(() => ({ ok: false, error: "storage" }));
+  }
+
+  /** Gorseli ve ust verisini siler; secili olan silinirse yerlesike doner. */
+  function removeCustomWallpaper(id) {
+    const nextIndex = customIndex.filter((c) => c.id !== id);
+    const patch = {};
+    patch[KEY_CUSTOM] = nextIndex;
+
+    return chrome.storage.local
+      .remove(CUSTOM_DATA_PREFIX + id)
+      .then(() => chrome.storage.local.set(patch))
+      .then(() => {
+        customIndex = nextIndex;
+        writeCache();
+        if (prefs[KEY_SELECTED] === CUSTOM_PREFIX + id) {
+          setPrefs({ [KEY_SELECTED]: WALLPAPERS[0].file });
+          applyWallpaperRef(WALLPAPERS[0].file);
+        }
+        return { ok: true };
+      })
+      .catch(() => ({ ok: false, error: "storage" }));
+  }
+
+  /** Arayuzun kucuk resimleri cizebilmesi icin base64 verilerini getirir. */
+  function getCustomData(ids) {
+    const keys = ids.map((id) => CUSTOM_DATA_PREFIX + id);
+    if (!keys.length) return Promise.resolve({});
+    return chrome.storage.local.get(keys).then((res) => {
+      const out = {};
+      ids.forEach((id) => {
+        out[id] = res[CUSTOM_DATA_PREFIX + id];
+      });
+      return out;
+    }, () => ({}));
+  }
+
+  /** Depoda ne kadar yer kullanildigi (arayuzde gosterilir). */
+  function storageUsage() {
+    return chrome.storage.local.getBytesInUse(null).then(
+      (used) => ({ used: used, limit: quotaLimit() }),
+      () => ({ used: 0, limit: quotaLimit() })
+    );
   }
 
   /**
@@ -253,10 +420,34 @@
 
   /* ---- Tercihler: localStorage (senkron onbellek) + chrome.storage ---- */
 
+  /**
+   * Onbellek yalnizca kucuk degerleri tutar: iki tercih ve kullanici
+   * gorsellerinin KIMLIKLERI. Base64 verisi buraya asla yazilmaz — hem
+   * sayfanin localStorage kotasini yerdi hem de YouTube'un kendi verisiyle
+   * ayni alani paylasiyor.
+   *
+   * Kimliklerin burada olmasi sart: karisik mod, daha chrome.storage
+   * cevaplamadan (document_start) havuzu kurabilsin diye. Aksi halde ilk
+   * cekiliste yalnizca yerlesik gorseller yarisirdi.
+   */
   function readCache() {
     try {
       const raw = localStorage.getItem(CACHE_KEY);
-      return raw ? Object.assign({}, DEFAULT_PREFS, JSON.parse(raw)) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+
+      if (Array.isArray(parsed.customIds)) {
+        customIndex = parsed.customIds.map((id) => ({ id: id }));
+      }
+
+      const clean = {};
+      if (typeof parsed[KEY_SELECTED] === "string") {
+        clean[KEY_SELECTED] = parsed[KEY_SELECTED];
+      }
+      if (typeof parsed[KEY_SHUFFLE] === "boolean") {
+        clean[KEY_SHUFFLE] = parsed[KEY_SHUFFLE];
+      }
+      return Object.assign({}, DEFAULT_PREFS, clean);
     } catch (_) {
       return null;
     }
@@ -264,7 +455,14 @@
 
   function writeCache() {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(prefs));
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          [KEY_SELECTED]: prefs[KEY_SELECTED],
+          [KEY_SHUFFLE]: Boolean(prefs[KEY_SHUFFLE]),
+          customIds: customIndex.map((c) => c.id),
+        })
+      );
     } catch (_) {
       // Ozel pencerede veya depolama kapaliysa onbellek olmadan devam.
     }
@@ -288,23 +486,33 @@
    */
   function initWallpaper() {
     prefs = readCache() || Object.assign({}, DEFAULT_PREFS);
-    applyWallpaperFile(resolveFile());
+
+    // Ozel gorseller yalnizca storage'da; senkron uygulanamazlar. Onbellek
+    // ozel bir secim gosteriyorsa yerlesik bir gorseli bir anligina gosterip
+    // sonra degistirmek yerine bekleriz (goz alici bir takla olmasin).
+    if (!isCustomRef(resolveRef())) applyWallpaperRef(resolveRef());
 
     try {
-      chrome.storage.local.get([KEY_SELECTED, KEY_SHUFFLE], (stored) => {
-        if (chrome.runtime.lastError || !stored) return;
+      chrome.storage.local.get([KEY_SELECTED, KEY_SHUFFLE, KEY_CUSTOM]).then((stored) => {
+        if (!stored) return;
         const wasShuffle = prefs[KEY_SHUFFLE];
-        prefs = Object.assign({}, DEFAULT_PREFS, prefs, stored);
+        customIndex = Array.isArray(stored[KEY_CUSTOM]) ? stored[KEY_CUSTOM] : [];
+        prefs = Object.assign({}, DEFAULT_PREFS, prefs, {
+          [KEY_SELECTED]: stored[KEY_SELECTED] || prefs[KEY_SELECTED],
+          [KEY_SHUFFLE]: Boolean(stored[KEY_SHUFFLE]),
+        });
         writeCache();
 
         // Karisik mod acik kaldiysa zaten rastgele bir gorsel uyguladik;
         // ikinci kez cekmek gozle gorulur bir sicrama yaratirdi.
         const shuffleChanged = prefs[KEY_SHUFFLE] !== wasShuffle;
         const staleFixed =
-          !prefs[KEY_SHUFFLE] && appliedFile !== prefs[KEY_SELECTED];
-        if (shuffleChanged || staleFixed) applyWallpaperFile(resolveFile());
+          !prefs[KEY_SHUFFLE] && appliedRef !== prefs[KEY_SELECTED];
+        if (shuffleChanged || staleFixed || appliedRef === null) {
+          applyWallpaperRef(resolveRef());
+        }
         notify();
-      });
+      }, noop);
 
       // Baska bir sekmede degistirilirse burasi da guncellensin.
       chrome.storage.onChanged.addListener((changes, area) => {
@@ -316,9 +524,15 @@
             touched = true;
           }
         }
+        if (KEY_CUSTOM in changes) {
+          customIndex = changes[KEY_CUSTOM].newValue || [];
+          touched = true;
+        }
         if (!touched) return;
         writeCache();
-        if (!prefs[KEY_SHUFFLE]) applyWallpaperFile(prefs[KEY_SELECTED]);
+        if (!prefs[KEY_SHUFFLE] && appliedRef !== prefs[KEY_SELECTED]) {
+          applyWallpaperRef(prefs[KEY_SELECTED]);
+        }
         notify();
       });
     } catch (_) {
@@ -405,7 +619,7 @@
     // Karisik mod: her ana sayfaya GIRISTE yeni bir gorsel. Zaten bos
     // sayfadayken yapilan gezinmeler gorseli degistirmez.
     if (prefs[KEY_SHUFFLE] && page === "blocked" && lastPage && lastPage !== "blocked") {
-      applyWallpaperFile(randomFile());
+      applyWallpaperRef(randomRef());
     }
     lastPage = page;
 
@@ -459,8 +673,20 @@
     KEY_SHUFFLE,
     getPrefs: () => Object.assign({}, prefs),
     setPrefs,
-    applyWallpaperFile,
-    randomFile,
+    applyWallpaperRef,
+    randomRef,
+    isCustomRef,
+    customRefOf: (id) => CUSTOM_PREFIX + id,
+    customIdOf,
+    getCustomIndex: () => customIndex.slice(),
+    getCustomData,
+    addCustomWallpaper,
+    removeCustomWallpaper,
+    storageUsage,
+    limits: {
+      maxCount: MAX_CUSTOM_COUNT,
+      maxItemBytes: MAX_ITEM_BYTES,
+    },
     onPrefsChange: (fn) => prefListeners.push(fn),
   };
 

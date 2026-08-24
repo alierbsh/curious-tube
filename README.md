@@ -120,18 +120,44 @@ satirini silin.
 
 Bos sayfada sag ust kosede bir disli butonu belirir; panel iki bolumden olusur:
 
-- **Wallpapers** — `wallpapers/` klasorundeki gorseller izgara halinde listelenir.
-  Birine tiklandiginda arka plan aninda degisir ve secim
+- **Wallpapers** — izgaranin ilk kutusu "+" kartidir: bilgisayarinizdan gorsel
+  yukler. Ardindan `wallpapers/` klasorundeki yerlesik gorseller, en sonda da
+  yukledikleriniz listelenir (uzerlerine gelince kucuk bir silme dugmesi
+  cikar). Birine tiklandiginda arka plan aninda degisir ve secim
   `chrome.storage.local` icinde `selectedWallpaper` olarak saklanir.
 - **Settings** — "Karisik Duvar Kagidi" anahtari. Acikken ana sayfa her
-  acildiginda rastgele bir gorsel gosterilir; deger `shuffleWallpaper`
-  anahtarinda tutulur.
+  acildiginda rastgele bir gorsel gosterilir; havuza yerlesikler kadar
+  kendi yukledikleriniz de dahildir. Deger `shuffleWallpaper` anahtarinda
+  tutulur. Bolumun altinda depolama kullanimi ozeti yer alir.
+
+### Yuklenen gorseller ve depolama
+
+Secilen dosya `FileReader` ile base64'e cevrilir, ancak depoya konmadan once
+bir canvas uzerinde **kucultulup yeniden kodlanir** (en uzun kenar 2560 px,
+WebP; gerekirse daha dusuk kalitede ikinci ve ucuncu deneme). Base64 ikili
+veriden ~%33 buyuk oldugu icin ham bir fotograf tek basina kotayi doldurabilir;
+700 KB altindaki kucuk gorseller ise bozulmasin diye oldugu gibi saklanir.
+
+Depolama duzeni bilerek ikiye ayrildi:
+
+| Anahtar | Icerik |
+| --- | --- |
+| `customWallpapers` | Yalnizca ust veri dizisi: `{id, bytes, addedAt}` |
+| `ymin:custom:<id>` | O gorselin base64 verisi (ayri anahtar) |
+
+Boylece sayfa acilirken tum gorseller okunmaz; sadece secili olanin anahtari
+getirilir. Kota korumalari: gorsel basina 3 MB tavan, en fazla 12 gorsel ve
+`getBytesInUse` ile yapilan kontrolde 512 KB'lik emniyet payi. Sinir asilirsa
+kayit **hic yazilmaz** ve panelde anlasilir bir uyari gosterilir.
 
 Tercih iki yerde tutulur: dogrusu `chrome.storage.local`, yani sekmeler ve
 oturumlar arasinda ortaktir. Ayrica sayfanin `localStorage`'inda
 (`ymin:prefs`) senkron okunabilen bir kopyasi vardir; `chrome.storage`
 asenkron oldugu icin ilk boyamada duvar kagidinin bir an yanlis gorunmesini
-bu onbellek engeller.
+bu onbellek engeller. Onbellekte yalnizca iki tercih ve yuklenen gorsellerin
+**kimlikleri** durur (base64 verisi asla) — kimlikler orada olmasa karisik mod
+ilk cekilisi henuz storage cevaplamadan yapamaz, kendi gorselleriniz havuza
+giremezdi.
 
 **Yeni duvar kagidi eklemek:** dosyayi `wallpapers/` klasorune atin ve
 `content.js` icindeki `WALLPAPERS` dizisine bir satir ekleyin. Manifest'e

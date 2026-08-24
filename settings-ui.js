@@ -5,9 +5,9 @@
  * bolumden olusur: duvar kagidi izgarasi ve ayarlar.
  *
  * Bu dosya content.js'ten SONRA yuklenir ve onun window.__curiousYouTube
- * uzerinden actigi kucuk API'yi kullanir (katalog + tercih okuma/yazma).
- * Icerik betikleri izole dunyayi paylastigi icin bu nesne sayfanin kendi
- * JavaScript'ine gorunmez.
+ * uzerinden actigi API'yi kullanir (katalog, tercihler, kullanici duvar
+ * kagitlari). Icerik betikleri izole dunyayi paylastigi icin bu nesne
+ * sayfanin kendi JavaScript'ine gorunmez.
  *
  * Panel ve butonun stilleri content.css'in 10. bolumundedir; burada yalnizca
  * yapi ve davranis vardir.
@@ -21,11 +21,28 @@
 
   const root = document.documentElement;
 
+  /**
+   * Yuklenen gorseli depoya koymadan once kucultup yeniden kodluyoruz.
+   * Base64, ikili veriden ~%33 buyuk; ham bir fotograf storage.local
+   * kotasini tek basina yiyebilir. Asagidaki denemeler sirayla uygulanir ve
+   * sinirin altina inen ilk sonuc kullanilir.
+   */
+  const ENCODE_ATTEMPTS = [
+    [2560, 0.85],
+    [1920, 0.8],
+    [1440, 0.72],
+  ];
+
+  /** Bu esigin altindaki kucuk gorseller yeniden kodlanmaz (kalite kaybi olmasin). */
+  const KEEP_ORIGINAL_BYTES = 700 * 1024;
+
   let gear = null;
   let scrim = null;
   let panel = null;
+  let fileInput = null;
   let built = false;
   let open = false;
+  let busy = false;
 
   /* ------------------------------------------------------------------ */
   /* Kucuk yardimcilar                                                   */
@@ -38,6 +55,11 @@
     return node;
   }
 
+  function formatBytes(bytes) {
+    if (!bytes) return "0 MB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
   const GEAR_SVG =
     '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
     '<path fill="currentColor" d="M19.14 12.94a7.6 7.6 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.24-1.13.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.65 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.6 7.6 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.39 1.05.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.24 1.13-.55 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2Z"/>' +
@@ -47,6 +69,108 @@
     '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
     '<path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>' +
     "</svg>";
+
+  const PLUS_SVG =
+    '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
+    '<path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/>' +
+    "</svg>";
+
+  const TRASH_SVG =
+    '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">' +
+    '<path fill="currentColor" d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/>' +
+    "</svg>";
+
+  /* ------------------------------------------------------------------ */
+  /* Gorsel hazirlama (FileReader + canvas)                              */
+  /* ------------------------------------------------------------------ */
+
+  function readAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  function encode(img, maxDim, quality) {
+    const longest = Math.max(img.naturalWidth, img.naturalHeight);
+    const scale = Math.min(1, maxDim / longest);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // WebP hem kucuk hem saydamligi korur; desteklenmiyorsa JPEG'e duseriz.
+    let out = canvas.toDataURL("image/webp", quality);
+    if (out.indexOf("data:image/webp") !== 0) {
+      out = canvas.toDataURL("image/jpeg", quality);
+    }
+    return out;
+  }
+
+  async function prepare(file) {
+    const original = await readAsDataURL(file);
+    const img = await loadImage(original);
+    const longest = Math.max(img.naturalWidth, img.naturalHeight);
+
+    if (original.length <= KEEP_ORIGINAL_BYTES && longest <= ENCODE_ATTEMPTS[0][0]) {
+      return original;
+    }
+
+    let out = original;
+    for (const [dim, quality] of ENCODE_ATTEMPTS) {
+      out = encode(img, dim, quality);
+      if (out.length <= api.limits.maxItemBytes) break;
+    }
+    return out;
+  }
+
+  const ERRORS = {
+    invalid: "Bu dosya bir görsel değil.",
+    count: "En fazla " + api.limits.maxCount +
+      " özel duvar kağıdı saklanabilir. Önce birini silin.",
+    size: "Görsel küçültmeye rağmen sınırın üstünde kaldı.",
+    quota: "Depolama alanı doldu. Önce bir duvar kağıdı silin.",
+    storage: "Kaydedilemedi, lütfen tekrar deneyin.",
+    read: "Görsel okunamadı.",
+  };
+
+  async function onFileChosen(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = ""; // ayni dosya tekrar secilebilsin
+    if (!file || busy) return;
+
+    busy = true;
+    setStatus("Görsel hazırlanıyor…", false);
+    try {
+      const dataUrl = await prepare(file);
+      const result = await api.addCustomWallpaper(dataUrl);
+      if (!result.ok) {
+        setStatus(ERRORS[result.error] || ERRORS.storage, true);
+        return;
+      }
+      api.setPrefs({ [api.KEY_SELECTED]: result.ref });
+      api.applyWallpaperRef(result.ref);
+      setStatus("", false);
+      await renderGrid();
+      render();
+    } catch (_) {
+      setStatus(ERRORS.read, true);
+    } finally {
+      busy = false;
+      refreshUsage();
+    }
+  }
 
   /* ------------------------------------------------------------------ */
   /* Panel                                                               */
@@ -79,14 +203,17 @@
     /* --- Sekmeler --- */
     const tabs = el("nav", "ymin-tabs");
     tabs.setAttribute("role", "tablist");
-    const wallpapersTab = tabButton("wallpapers", "Wallpapers");
-    const settingsTab = tabButton("settings", "Settings");
-    tabs.append(wallpapersTab, settingsTab);
+    tabs.append(tabButton("wallpapers", "Wallpapers"), tabButton("settings", "Settings"));
     panel.appendChild(tabs);
 
     /* --- Bolum: Wallpapers --- */
     const wallpapersPane = el("div", "ymin-pane");
     wallpapersPane.dataset.pane = "wallpapers";
+
+    const status = el("p", "ymin-note");
+    status.dataset.role = "status";
+    status.hidden = true;
+    wallpapersPane.appendChild(status);
 
     const shuffleNote = el(
       "p",
@@ -98,9 +225,16 @@
     wallpapersPane.appendChild(shuffleNote);
 
     const grid = el("div", "ymin-grid");
-    api.WALLPAPERS.forEach((entry) => grid.appendChild(tile(entry)));
+    grid.dataset.role = "grid";
     wallpapersPane.appendChild(grid);
     panel.appendChild(wallpapersPane);
+
+    /* Gizli dosya secici: "+" kartina tiklandiginda tetiklenir. */
+    fileInput = el("input", "ymin-file");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.addEventListener("change", onFileChosen);
+    wallpapersPane.appendChild(fileInput);
 
     /* --- Bolum: Settings --- */
     const settingsPane = el("div", "ymin-pane");
@@ -114,7 +248,8 @@
       el(
         "div",
         "ymin-row-sub",
-        "Ana sayfayı her açtığınızda rastgele bir duvar kağıdı gösterilir."
+        "Ana sayfayı her açtığınızda rastgele bir duvar kağıdı gösterilir. " +
+          "Kendi yüklediğiniz görseller de havuza dahildir."
       )
     );
 
@@ -127,18 +262,24 @@
       const next = !api.getPrefs()[api.KEY_SHUFFLE];
       api.setPrefs({ [api.KEY_SHUFFLE]: next });
       // Acilir acilmaz etkisi gorulsun; kapatilinca sabit secime donulur.
-      api.applyWallpaperFile(
-        next ? api.randomFile() : api.getPrefs()[api.KEY_SELECTED]
+      api.applyWallpaperRef(
+        next ? api.randomRef() : api.getPrefs()[api.KEY_SELECTED]
       );
       render();
     });
 
     row.append(label, toggle);
     settingsPane.appendChild(row);
+
+    const usage = el("div", "ymin-usage");
+    usage.dataset.role = "usage";
+    settingsPane.appendChild(usage);
     panel.appendChild(settingsPane);
 
     document.body.append(scrim, panel);
+    renderGrid();
     render();
+    refreshUsage();
   }
 
   function tabButton(name, text) {
@@ -161,33 +302,122 @@
     });
   }
 
-  function tile(entry) {
+  function setStatus(message, isError) {
+    if (!built) return;
+    const node = panel.querySelector('[data-role="status"]');
+    node.textContent = message;
+    node.classList.toggle("is-error", Boolean(isError));
+    node.hidden = !message;
+  }
+
+  function refreshUsage() {
+    if (!built) return;
+    api.storageUsage().then(({ used, limit }) => {
+      panel.querySelector('[data-role="usage"]').textContent =
+        "Depolama: " + formatBytes(used) + " / " + formatBytes(limit) +
+        " · " + api.getCustomIndex().length + "/" + api.limits.maxCount +
+        " özel duvar kağıdı";
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Izgara                                                              */
+  /* ------------------------------------------------------------------ */
+
+  function addTile() {
+    const btn = el("button", "ymin-tile ymin-tile-add");
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Bilgisayarindan duvar kagidi ekle");
+    btn.title = "Duvar kağıdı ekle";
+    const icon = el("span", "ymin-add-icon");
+    icon.innerHTML = PLUS_SVG;
+    btn.append(icon, el("span", "ymin-add-text", "Ekle"));
+    btn.addEventListener("click", () => {
+      if (!busy) fileInput.click();
+    });
+    return btn;
+  }
+
+  function tile(ref, src, label, removable) {
     const btn = el("button", "ymin-tile");
     btn.type = "button";
-    btn.dataset.file = entry.file;
-    btn.setAttribute("aria-label", entry.label);
-    btn.title = entry.label;
+    btn.dataset.ref = ref;
+    btn.setAttribute("aria-label", label);
+    btn.title = label;
 
     const img = el("img", "ymin-thumb");
     img.loading = "lazy"; // Ekranda gorunmeyen kucuk resimler bosuna acilmasin.
     img.decoding = "async";
     img.alt = "";
-    try {
-      img.src = chrome.runtime.getURL(entry.file);
-    } catch (_) {
-      /* baglam dustuyse bos kutu kalir */
-    }
+    if (src) img.src = src;
 
     const badge = el("span", "ymin-tile-check");
     badge.innerHTML = CHECK_SVG;
-
     btn.append(img, badge);
+
+    if (removable) {
+      const remove = el("span", "ymin-tile-remove");
+      remove.setAttribute("role", "button");
+      remove.setAttribute("tabindex", "0");
+      remove.setAttribute("aria-label", label + " — sil");
+      remove.title = "Sil";
+      remove.innerHTML = TRASH_SVG;
+
+      const doRemove = (event) => {
+        // Kartin secim tiklamasini tetiklemesin.
+        event.stopPropagation();
+        event.preventDefault();
+        api.removeCustomWallpaper(api.customIdOf(ref))
+          .then(() => {
+            renderGrid();
+            render();
+            refreshUsage();
+          });
+      };
+      remove.addEventListener("click", doRemove);
+      remove.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") doRemove(event);
+      });
+      btn.appendChild(remove);
+    }
+
     btn.addEventListener("click", () => {
-      api.setPrefs({ [api.KEY_SELECTED]: entry.file });
-      api.applyWallpaperFile(entry.file);
+      api.setPrefs({ [api.KEY_SELECTED]: ref });
+      api.applyWallpaperRef(ref);
       render();
     });
     return btn;
+  }
+
+  /** Izgarayi bastan kurar: "+" karti, yerlesikler, sonra kullanicininkiler. */
+  function renderGrid() {
+    if (!built) return Promise.resolve();
+    const grid = panel.querySelector('[data-role="grid"]');
+    grid.textContent = "";
+    grid.appendChild(addTile());
+
+    api.WALLPAPERS.forEach((entry) => {
+      let src = "";
+      try {
+        src = chrome.runtime.getURL(entry.file);
+      } catch (_) {
+        /* baglam dustuyse bos kutu kalir */
+      }
+      grid.appendChild(tile(entry.file, src, entry.label, false));
+    });
+
+    const index = api.getCustomIndex();
+    if (!index.length) return Promise.resolve();
+
+    return api.getCustomData(index.map((c) => c.id)).then((data) => {
+      index.forEach((meta, i) => {
+        const ref = api.customRefOf(meta.id);
+        grid.appendChild(
+          tile(ref, data[meta.id] || "", "Kendi duvar kagidiniz " + (i + 1), true)
+        );
+      });
+      render();
+    });
   }
 
   /** Arayuzu yururlukteki tercihlere gore tazeler. */
@@ -195,8 +425,8 @@
     if (!built) return;
     const current = api.getPrefs();
 
-    panel.querySelectorAll(".ymin-tile").forEach((btn) => {
-      const selected = btn.dataset.file === current[api.KEY_SELECTED];
+    panel.querySelectorAll(".ymin-tile[data-ref]").forEach((btn) => {
+      const selected = btn.dataset.ref === current[api.KEY_SELECTED];
       btn.classList.toggle("is-selected", selected);
       btn.setAttribute("aria-pressed", selected ? "true" : "false");
     });
@@ -223,7 +453,10 @@
     });
     gear.setAttribute("aria-expanded", "true");
     selectTab("wallpapers");
+    setStatus("", false);
+    renderGrid();
     render();
+    refreshUsage();
     document.addEventListener("keydown", onKeydown, true);
   }
 
