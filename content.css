@@ -772,7 +772,7 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
 .ymin-gear {
   position: fixed !important;
   top: auto !important;
-  bottom: 20px !important;
+  bottom: 44px !important;
   right: 20px !important;
   left: auto !important;
   z-index: 99999 !important;
