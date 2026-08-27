@@ -262,11 +262,19 @@ html.ymin-on ytd-app ytd-mini-guide-renderer + #page-manager {
    3) HOME / SUBSCRIPTIONS / EXPLORE / TRENDING — an entirely blank page
    --------------------------------------------------------------------- */
 
+/* These subtypes are hidden on every route, not just the blocked ones:
+   YouTube keeps the old <ytd-browse> around in the page manager after an SPA
+   navigation, so a stale feed could otherwise flash back into view.
+
+   page-subtype="channels" deliberately does NOT belong here. It looks like
+   the /feed/channels list, but YouTube gives a real channel page (/@name,
+   /channel/UC..., /c/...) the very same subtype, so hiding it unconditionally
+   blanked every channel. /feed/channels is a blocked route anyway and is
+   already covered by the .ymin-blocked rule below. */
 html.ymin-on ytd-browse[page-subtype="home"],
 html.ymin-on ytd-browse[page-subtype="subscriptions"],
 html.ymin-on ytd-browse[page-subtype="trending"],
 html.ymin-on ytd-browse[page-subtype="explore"],
-html.ymin-on ytd-browse[page-subtype="channels"],
 html.ymin-on ytd-browse[page-subtype="storefront"] {
   display: none !important;
 }

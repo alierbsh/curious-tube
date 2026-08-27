@@ -29,10 +29,8 @@
     "/gaming",
   ]);
 
-  /** Nodes injected later that are removed from the DOM outright. */
+  /** Ads and promos: injected late and removed outright, in every state. */
   const KILL_SELECTORS = [
-    "ytd-reel-shelf-renderer",
-    "ytd-rich-shelf-renderer[is-shorts]",
     "ytd-ad-slot-renderer",
     "ytd-in-feed-ad-layout-renderer",
     "ytd-promoted-sparkles-web-renderer",
@@ -41,6 +39,17 @@
     "ytd-mealbar-promo-renderer",
     "ytd-banner-promo-renderer",
     "ytd-statement-banner-renderer",
+  ].join(",");
+
+  /**
+   * Shorts shelves. These are removed rather than hidden because the grid
+   * they sit in leaves a gap behind an invisible child — but only while the
+   * Shorts preference is off. Deleting them unconditionally made "Shorts on"
+   * a half-measure: the CSS revealed the shelves and this swept them away.
+   */
+  const SHORTS_KILL_SELECTORS = [
+    "ytd-reel-shelf-renderer",
+    "ytd-rich-shelf-renderer[is-shorts]",
   ].join(",");
 
   /**
@@ -839,7 +848,10 @@
   function sweep(scope) {
     if (!isEnabled()) return;
     if (!scope || typeof scope.querySelectorAll !== "function") return;
-    scope.querySelectorAll(KILL_SELECTORS).forEach((node) => node.remove());
+    const selectors = prefs[KEY_SHORTS]
+      ? KILL_SELECTORS
+      : KILL_SELECTORS + "," + SHORTS_KILL_SELECTORS;
+    scope.querySelectorAll(selectors).forEach((node) => node.remove());
   }
 
   const observer = new MutationObserver((mutations) => {
