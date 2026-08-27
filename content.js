@@ -22,7 +22,6 @@
   /** Routes whose content is emptied entirely (home, feeds, explore). */
   const BLOCKED_PATHS = new Set([
     "/",
-    "/feed/subscriptions",
     "/feed/trending",
     "/feed/explore",
     "/feed/storefront",
@@ -30,12 +29,19 @@
   ]);
 
   /**
-   * Feed routes that are NOT the algorithm: this one is the user's own hub
-   * (their channel, videos and playlists) and is where the top-right avatar
-   * points until the real channel address has been learned. Blanking it would
-   * make that link a dead end.
+   * Feed routes that are NOT the algorithm, and so are reachable from the
+   * corner dock rather than blanked:
+   *
+   *   /feed/you           the user's own hub — their channel, videos and
+   *                       playlists; where the avatar points until the real
+   *                       channel address has been learned.
+   *   /feed/subscriptions what the channels the user chose to follow have
+   *                       posted. Subscriptions are the user's own list, not
+   *                       a recommendation.
+   *
+   * Blanking either would turn its own button into a dead end.
    */
-  const ALLOWED_FEEDS = new Set(["/feed/you"]);
+  const ALLOWED_FEEDS = new Set(["/feed/you", "/feed/subscriptions"]);
 
   /** Ads and promos: injected late and removed outright, in every state. */
   const KILL_SELECTORS = [

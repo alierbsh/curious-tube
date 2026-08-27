@@ -1,8 +1,10 @@
 /**
- * Curious YouTube — settings interface
+ * Curious YouTube — corner dock and settings interface
  *
- * The gear button in the top-right corner and the drawer it opens. The panel
- * has two sections: the wallpaper grid and the settings list.
+ * The round buttons in the bottom-right corner and the drawer the gear
+ * opens. The panel has two sections: the wallpaper grid and the settings
+ * list. The dock also carries the navigation shortcuts, because it already
+ * owns the one mount that heals itself when YouTube re-renders the page.
  *
  * This file loads AFTER content.js and uses the API it exposes on
  * window.__curiousYouTube (catalog, preferences, custom wallpapers). Content
@@ -35,6 +37,7 @@
   const KEEP_ORIGINAL_BYTES = 700 * 1024;
 
   let gear = null;
+  let dock = null;
   let scrim = null;
   let panel = null;
   let fileInput = null;
@@ -62,6 +65,25 @@
     '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
     '<path fill="currentColor" d="M19.14 12.94a7.6 7.6 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.24-1.13.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.65 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.6 7.6 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.39 1.05.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.24 1.13-.55 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2Z"/>' +
     "</svg>";
+
+  /** Material's "subscriptions" glyph, the same mark YouTube's own guide uses. */
+  const SUBSCRIPTIONS_SVG =
+    '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
+    '<path fill="currentColor" d="M20 8H4V6h16v2zm-2-6H6v2h12V2zm4 10v8c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-8c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-6 4l-6-3.27v6.53L16 16z"/>' +
+    "</svg>";
+
+  /**
+   * Navigation shortcuts, in the order they stack above the gear. Each one
+   * is a real link, so middle-click and "open in new tab" keep working.
+   */
+  const DOCK_LINKS = [
+    {
+      id: "ymin-subscriptions",
+      href: "/feed/subscriptions",
+      label: "Subscriptions",
+      svg: () => SUBSCRIPTIONS_SVG,
+    },
+  ];
 
   const CHECK_SVG =
     '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
@@ -550,10 +572,10 @@
   /* ------------------------------------------------------------------ */
 
   /**
-   * Builds the gear and attaches it to <body>.
+   * Builds the corner dock and attaches it to <body>.
    *
-   * Safe to call repeatedly: the button and its listeners are created once,
-   * and every later call only checks that the nodes are still in the
+   * Safe to call repeatedly: the buttons and their listeners are created
+   * once, and every later call only checks that the nodes are still in the
    * document. This is deliberate — the gear is the only route back once the
    * extension has been switched off, so a single re-render by YouTube that
    * happened to detach it would lock the user out for good. Re-attaching is
@@ -562,7 +584,21 @@
   function mount() {
     if (!document.body) return;
 
-    if (!gear) {
+    if (!dock) {
+      dock = el("div", "ymin-dock");
+
+      DOCK_LINKS.forEach((spec) => {
+        const link = el("a", "ymin-dock-btn");
+        link.id = spec.id;
+        link.href = spec.href;
+        link.title = spec.label;
+        link.setAttribute("aria-label", spec.label);
+        link.innerHTML = spec.svg();
+        dock.appendChild(link);
+      });
+
+      // Last child: the stack grows upward from the gear, so its position
+      // never shifts when a shortcut above it is added or hidden.
       gear = el("button", "ymin-gear");
       gear.type = "button";
       gear.setAttribute("aria-label", "Settings");
@@ -570,11 +606,13 @@
       gear.title = "Settings";
       gear.innerHTML = GEAR_SVG;
       gear.addEventListener("click", () => (open ? closePanel() : openPanel()));
+      dock.appendChild(gear);
+
       api.onPrefsChange(render);
     }
 
-    if (!gear.isConnected) document.body.appendChild(gear);
-    // The drawer lives next to the gear; if one was detached, so was the other.
+    if (!dock.isConnected) document.body.appendChild(dock);
+    // The drawer lives next to the dock; if one was detached, so was the other.
     if (built && !panel.isConnected) document.body.append(scrim, panel);
   }
 

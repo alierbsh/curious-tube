@@ -272,7 +272,6 @@ html.ymin-on ytd-app ytd-mini-guide-renderer + #page-manager {
    blanked every channel. /feed/channels is a blocked route anyway and is
    already covered by the .ymin-blocked rule below. */
 html.ymin-on ytd-browse[page-subtype="home"],
-html.ymin-on ytd-browse[page-subtype="subscriptions"],
 html.ymin-on ytd-browse[page-subtype="trending"],
 html.ymin-on ytd-browse[page-subtype="explore"],
 html.ymin-on ytd-browse[page-subtype="storefront"] {
@@ -779,16 +778,20 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
    miniplayer) sit in the low thousands. The values here are far above both
    so the button can never be buried. */
 
-/* --- Gear button: bottom-right, on every route, in every state ---------
-   One position and one size, whether the extension is on or off. The button
-   is a fixed landmark: the user learns where it is once, and it is still
-   there after the master switch turns everything else off. Anchoring it to
-   the state it controls would make it move exactly when it is needed most.
+/* --- The corner dock: bottom-right, on every route, in every state -----
+   One fixed anchor holding the round buttons, stacked upward from the gear.
+   The dock owns the position so buttons can be added or hidden without any
+   arithmetic; each button is a plain flex item.
+
+   The gear is a fixed landmark: the user learns where it is once, and it is
+   still there after the master switch turns everything else off. Anchoring
+   it to the state it controls would move it exactly when it is needed most.
+   That is why nothing in this block is gated on .ymin-on.
 
    The bottom-right corner is also the only corner YouTube never claims on
    any route — the masthead owns the top, the guide owns the left. */
 
-.ymin-gear {
+.ymin-dock {
   position: fixed !important;
   top: auto !important;
   bottom: 44px !important;
@@ -796,8 +799,21 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
   left: auto !important;
   z-index: 99999 !important;
   display: flex !important;
+  /* The gear is the last child, so the stack grows upward from it. */
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.ymin-gear,
+.ymin-dock-btn {
+  position: relative !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex: 0 0 auto !important;
   width: 52px !important;
   height: 52px !important;
   padding: 0 !important;
@@ -809,6 +825,7 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
   color: rgba(255, 255, 255, 0.9) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
   cursor: pointer !important;
+  text-decoration: none !important;
   opacity: 0.8;
   backdrop-filter: blur(8px);
   transition: opacity 160ms ease, transform 220ms ease, color 160ms ease;
@@ -816,7 +833,8 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
 
 /* The inline width/height on the <svg> is a fallback; the real size is set
    here so the icon scales with the button. */
-.ymin-gear svg {
+.ymin-gear svg,
+.ymin-dock-btn svg {
   width: 26px !important;
   height: 26px !important;
 }
@@ -827,6 +845,21 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
   color: #ffffff !important;
   transform: rotate(30deg);
   outline: none !important;
+}
+
+.ymin-dock-btn:hover,
+.ymin-dock-btn:focus-visible {
+  opacity: 1;
+  color: #ffffff !important;
+  transform: scale(1.06);
+  outline: none !important;
+}
+
+/* Navigation shortcuts only make sense while the extension is on: with it
+   off YouTube's own guide is back and carries the same links. The gear is
+   the deliberate exception above. */
+html:not(.ymin-on) .ymin-dock-btn {
+  display: none !important;
 }
 
 /* --- The scrim behind the panel ---------------------------------------- */
@@ -882,6 +915,7 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
 
 @media (prefers-reduced-motion: reduce) {
   .ymin-gear,
+  .ymin-dock-btn,
   .ymin-scrim,
   .ymin-panel {
     transition: none !important;
