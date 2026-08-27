@@ -135,6 +135,31 @@
     'ytd-active-account-header-renderer a[href^="/@"]',
   ].join(",");
 
+  /** Any link that addresses a channel, by handle or by id. */
+  const CHANNEL_LINK_SELECTORS = 'a[href^="/@"],a[href^="/channel/UC"]';
+
+  /**
+   * Channel links that belong to somebody else even on the account hub: the
+   * guide lists the user's subscriptions, and every shelf entry names the
+   * channel that published it. Only links outside all of these can be the
+   * page owner's own channel.
+   */
+  const FOREIGN_LINK_SCOPES = [
+    "#guide",
+    "ytd-guide-renderer",
+    "ytd-mini-guide-renderer",
+    "ytd-shelf-renderer",
+    "ytd-video-renderer",
+    "ytd-grid-video-renderer",
+    "ytd-rich-item-renderer",
+    "ytd-compact-video-renderer",
+    "ytd-playlist-renderer",
+    "yt-lockup-view-model",
+  ].join(",");
+
+  /** The channel tab that actually lists the uploads. */
+  const CHANNEL_TAB = "/videos";
+
   /**
    * Feature switches, in the order they appear in the settings panel.
    *
@@ -643,8 +668,8 @@
 
     if (!prefs[KEY_ACCOUNT_URL]) {
       const link = document.querySelector(ACCOUNT_LINK_SELECTORS);
-      const href = link && link.getAttribute("href");
-      if (href) patch[KEY_ACCOUNT_URL] = href;
+      const href = (link && link.getAttribute("href")) || findOwnChannelOnHub();
+      if (href) patch[KEY_ACCOUNT_URL] = channelRoot(href);
     }
 
     const img = document.querySelector(AVATAR_SELECTORS);
@@ -655,8 +680,50 @@
     return patch;
   }
 
+  /**
+   * Reduces a channel address to its root, dropping any tab that happens to
+   * be on it (/@name/featured -> /@name), so one stored value can be pointed
+   * at whichever tab we want.
+   */
+  function channelRoot(href) {
+    const path = href.split("?")[0].split("#")[0].replace(/\/+$/, "");
+    const parts = path.split("/").filter(Boolean);
+    if (parts[0] && parts[0].charAt(0) === "@") return "/" + parts[0];
+    if (parts[0] === "channel" && parts[1]) return "/channel/" + parts[1];
+    return path;
+  }
+
+  /**
+   * Finds the signed-in user's own channel on YouTube's account hub.
+   *
+   * Only there: on that page every channel link that is not a subscription in
+   * the guide and not a shelf entry belongs to the user. Ambiguity is treated
+   * as failure — sending someone to the wrong channel is worse than leaving
+   * the link on the hub it already points at.
+   */
+  function findOwnChannelOnHub() {
+    if (location.pathname !== ACCOUNT_FALLBACK) return null;
+
+    const found = new Set();
+    document.querySelectorAll(CHANNEL_LINK_SELECTORS).forEach((a) => {
+      if (a.closest && a.closest(FOREIGN_LINK_SCOPES)) return;
+      const href = a.getAttribute("href");
+      if (href) found.add(channelRoot(href));
+    });
+
+    return found.size === 1 ? found.values().next().value : null;
+  }
+
+  /**
+   * Where the avatar points. Once the channel is known it goes straight to
+   * the uploads tab — landing on the channel's Home tab shows a trailer and
+   * whatever is featured, not the videos.
+   */
   function accountHref() {
-    return prefs[KEY_ACCOUNT_URL] || ACCOUNT_FALLBACK;
+    const channel = prefs[KEY_ACCOUNT_URL];
+    // Normalised again here: a value cached by an older version may still
+    // carry a tab of its own.
+    return channel ? channelRoot(channel) + CHANNEL_TAB : ACCOUNT_FALLBACK;
   }
 
   /**
