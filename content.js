@@ -29,6 +29,14 @@
     "/gaming",
   ]);
 
+  /**
+   * Feed routes that are NOT the algorithm: this one is the user's own hub
+   * (their channel, videos and playlists) and is where the top-right avatar
+   * points until the real channel address has been learned. Blanking it would
+   * make that link a dead end.
+   */
+  const ALLOWED_FEEDS = new Set(["/feed/you"]);
+
   /** Ads and promos: injected late and removed outright, in every state. */
   const KILL_SELECTORS = [
     "ytd-ad-slot-renderer",
@@ -95,6 +103,39 @@
   const KEY_GRAYSCALE = "grayscaleEnabled";
 
   /**
+   * Learned account details, not preferences: the signed-in user's avatar
+   * and the address of their own channel. They are cached so the top-right
+   * link can be painted before YouTube's masthead has rendered anything.
+   */
+  const KEY_ACCOUNT_URL = "myChannelUrl";
+  const KEY_ACCOUNT_AVATAR = "myAvatarUrl";
+
+  /**
+   * YouTube's own account hub. Used until the real channel address has been
+   * learned; it carries the user's channel, videos and playlists, so the
+   * link is never a dead end even if discovery never succeeds.
+   */
+  const ACCOUNT_FALLBACK = "/feed/you";
+
+  /** YouTube's avatar image, wherever the current masthead keeps it. */
+  const AVATAR_SELECTORS = [
+    "#avatar-btn img",
+    "ytd-masthead #avatar-btn img",
+    "ytd-topbar-menu-button-renderer img",
+    "ytd-masthead yt-img-shadow#avatar img",
+  ].join(",");
+
+  /**
+   * YouTube's own account header. It renders the signed-in channel and links
+   * to it, so it is the one place the channel address can be read without
+   * guessing at markup that means something else elsewhere.
+   */
+  const ACCOUNT_LINK_SELECTORS = [
+    'ytd-active-account-header-renderer a[href^="/channel/"]',
+    'ytd-active-account-header-renderer a[href^="/@"]',
+  ].join(",");
+
+  /**
    * Feature switches, in the order they appear in the settings panel.
    *
    * "hide" flips the polarity: for Comments/Description/Shorts the preference
@@ -123,6 +164,12 @@
     KEY_GRAYSCALE,
   ];
 
+  /**
+   * The string preferences that also belong in the synchronous cache, for the
+   * same reason as BOOL_KEYS: they decide what is painted at document_start.
+   */
+  const STRING_KEYS = [KEY_SELECTED, KEY_ACCOUNT_URL, KEY_ACCOUNT_AVATAR];
+
   /** Every key this content script reads from storage. */
   const ALL_KEYS = [
     KEY_SELECTED,
@@ -133,6 +180,8 @@
     KEY_DESCRIPTION,
     KEY_SHORTS,
     KEY_GRAYSCALE,
+    KEY_ACCOUNT_URL,
+    KEY_ACCOUNT_AVATAR,
   ];
 
   /**
@@ -185,6 +234,8 @@
     [KEY_DESCRIPTION]: false,
     [KEY_SHORTS]: false,
     [KEY_GRAYSCALE]: false,
+    [KEY_ACCOUNT_URL]: "",
+    [KEY_ACCOUNT_AVATAR]: "",
   };
 
   /** Search input: covers both the old and the new masthead components. */
@@ -256,7 +307,7 @@
     ["ymin-blocked", "ymin-wallpaper"].forEach((c) => root.classList.remove(c));
     root.style.removeProperty("--ymin-wallpaper");
     delete root.dataset.yminPage;
-    ["ymin-logo", "ymin-nav-logo", "ymin-home-link"].forEach((id) => {
+    ["ymin-logo", "ymin-nav-logo", "ymin-home-link", "ymin-account"].forEach((id) => {
       const node = document.getElementById(id);
       if (node) node.remove();
     });
@@ -272,6 +323,7 @@
     if (path.startsWith("/shorts/")) return "shorts";
     if (path === "/results") return "search";
     if (path === "/watch") return "watch";
+    if (ALLOWED_FEEDS.has(path)) return "other";
     if (BLOCKED_PATHS.has(path)) return "blocked";
     if (path.startsWith("/feed/")) return "blocked";
     return "other";
@@ -574,6 +626,72 @@
     }
   }
 
+  /* ------------------------------------------------------------------ */
+  /* The account link (top right)                                        */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Reads what YouTube already knows about the signed-in user: the avatar
+   * image and, when its account header happens to be in the DOM, the address
+   * of their own channel. Both are remembered, so the link keeps working on
+   * pages where neither is present.
+   *
+   * Nothing here is required for the link to function — see ACCOUNT_FALLBACK.
+   */
+  function learnAccount() {
+    const patch = {};
+
+    if (!prefs[KEY_ACCOUNT_URL]) {
+      const link = document.querySelector(ACCOUNT_LINK_SELECTORS);
+      const href = link && link.getAttribute("href");
+      if (href) patch[KEY_ACCOUNT_URL] = href;
+    }
+
+    const img = document.querySelector(AVATAR_SELECTORS);
+    const src = img && (img.src || img.getAttribute("src"));
+    if (src && src !== prefs[KEY_ACCOUNT_AVATAR]) patch[KEY_ACCOUNT_AVATAR] = src;
+
+    if (Object.keys(patch).length) setPrefs(patch);
+    return patch;
+  }
+
+  function accountHref() {
+    return prefs[KEY_ACCOUNT_URL] || ACCOUNT_FALLBACK;
+  }
+
+  /**
+   * The avatar link in the top-right corner. Like the logo it is built once
+   * and left in the DOM; only its href and image are refreshed, so the
+   * element survives SPA navigation without being rebuilt.
+   */
+  function renderAccount() {
+    if (!document.body) return;
+
+    let link = document.getElementById("ymin-account");
+    if (!link) {
+      link = document.createElement("a");
+      link.id = "ymin-account";
+      link.setAttribute("aria-label", "Your channel");
+      link.title = "Your channel";
+
+      const img = document.createElement("img");
+      img.id = "ymin-account-avatar";
+      img.alt = "";
+      img.decoding = "async";
+      link.appendChild(img);
+      document.body.appendChild(link);
+    }
+
+    link.href = accountHref();
+
+    const img = link.firstElementChild;
+    const src = prefs[KEY_ACCOUNT_AVATAR];
+    // Until an avatar is known the link still works; the CSS draws a plain
+    // circle behind the empty image rather than a broken-image icon.
+    if (src && img.getAttribute("src") !== src) img.setAttribute("src", src);
+    link.classList.toggle("has-avatar", Boolean(src));
+  }
+
   /* ---- Preferences: localStorage (sync cache) + chrome.storage -------- */
 
   /**
@@ -596,9 +714,10 @@
       }
 
       const clean = {};
-      if (typeof parsed[KEY_SELECTED] === "string") {
-        clean[KEY_SELECTED] = parsed[KEY_SELECTED];
-      }
+      STRING_KEYS.forEach((key) => {
+        // An empty string must not shadow the default wallpaper.
+        if (typeof parsed[key] === "string" && parsed[key]) clean[key] = parsed[key];
+      });
       BOOL_KEYS.forEach((key) => {
         if (typeof parsed[key] === "boolean") clean[key] = parsed[key];
       });
@@ -610,7 +729,8 @@
 
   function writeCache() {
     try {
-      const snapshot = { [KEY_SELECTED]: prefs[KEY_SELECTED] };
+      const snapshot = {};
+      STRING_KEYS.forEach((key) => (snapshot[key] = prefs[key] || ""));
       BOOL_KEYS.forEach((key) => {
         snapshot[key] = key === KEY_ENABLED
           ? prefs[key] !== false
@@ -789,6 +909,11 @@
         ensureSearchVisible();
         renderLogo();
         renderNavLogo();
+        // The masthead avatar is one of the last things Polymer draws, so
+        // account discovery rides along with these retries instead of paying
+        // a querySelector on every mutation batch.
+        learnAccount();
+        renderAccount();
         stripPlaceholder();
         if (root.classList.contains("ymin-blocked")) focusSearch();
       }, delay)
@@ -835,6 +960,7 @@
 
     renderLogo();
     renderNavLogo();
+    renderAccount();
     stripPlaceholder();
     settle();
 

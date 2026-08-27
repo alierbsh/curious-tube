@@ -665,6 +665,83 @@ html.ymin-on #ymin-home-link {
   text-decoration: none !important;
 }
 
+/* --- Account link: the user's own channel, top right ------------------
+   Fixed rather than dropped into the masthead: on the blank page the whole
+   masthead is translated to the middle of the screen, so a child of it would
+   follow the search bar into the centre. Fixed keeps one position on every
+   route, mirroring the gear in the opposite corner.
+
+   Only while the extension is on — with it off YouTube's own avatar button
+   is back in that corner and two would collide. */
+html.ymin-on #ymin-account {
+  position: fixed !important;
+  top: 10px !important;
+  right: 20px !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 50% !important;
+  /* Visible as a plain disc until the avatar has been read from the page. */
+  background: rgba(20, 20, 20, 0.82) !important;
+  text-decoration: none !important;
+  opacity: 0.85;
+  transition: opacity 160ms ease, transform 220ms ease;
+}
+
+html.ymin-on #ymin-account:hover,
+html.ymin-on #ymin-account:focus-visible {
+  opacity: 1;
+  transform: scale(1.06);
+  outline: none !important;
+}
+
+html.ymin-on #ymin-account-avatar {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  /* No avatar known yet: an empty <img> would draw a broken-image glyph. */
+  display: none !important;
+}
+
+html.ymin-on #ymin-account.has-avatar #ymin-account-avatar {
+  display: block !important;
+}
+
+/* Placeholder while no avatar is known — a head and shoulders drawn in CSS,
+   so no data: URI has to survive YouTube's content security policy. */
+html.ymin-on #ymin-account:not(.has-avatar)::before,
+html.ymin-on #ymin-account:not(.has-avatar)::after {
+  content: "" !important;
+  position: absolute !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+html.ymin-on #ymin-account:not(.has-avatar)::before {
+  top: 7px !important;
+  width: 11px !important;
+  height: 11px !important;
+  border-radius: 50% !important;
+}
+
+html.ymin-on #ymin-account:not(.has-avatar)::after {
+  bottom: 3px !important;
+  width: 20px !important;
+  height: 9px !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ymin-on #ymin-account {
+    transition: none !important;
+  }
+}
+
 /* ---------------------------------------------------------------------
    10) SETTINGS INTERFACE — the gear button and the drawer panel
    ---------------------------------------------------------------------
