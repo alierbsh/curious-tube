@@ -1,5 +1,5 @@
 /**
- * Curious YouTube — content script
+ * CuriousTube — content script
  *
  * The CSS does the static hiding; this file covers the five jobs CSS cannot
  * do on its own:
@@ -416,7 +416,7 @@
 
     root.classList.add("ymin-safe");
     console.warn(
-      "[Curious YouTube] The search box is not visible; suggestion hiding " +
+      "[CuriousTube] The search box is not visible; suggestion hiding " +
         "and centering have been disabled in this tab."
     );
   }

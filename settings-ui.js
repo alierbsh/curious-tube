@@ -1,5 +1,5 @@
 /**
- * Curious YouTube — corner dock and settings interface
+ * CuriousTube — corner dock and settings interface
  *
  * The round buttons in the bottom-right corner and the drawer the gear
  * opens. The panel has two sections: the wallpaper grid and the settings
@@ -206,11 +206,11 @@
     panel = el("aside", "ymin-panel");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
-    panel.setAttribute("aria-label", "Curious YouTube settings");
+    panel.setAttribute("aria-label", "CuriousTube settings");
 
     /* --- Header --- */
     const header = el("header", "ymin-panel-header");
-    header.appendChild(el("div", "ymin-panel-title", "Curious YouTube"));
+    header.appendChild(el("div", "ymin-panel-title", "CuriousTube"));
 
     const close = el("button", "ymin-icon-btn");
     close.type = "button";
