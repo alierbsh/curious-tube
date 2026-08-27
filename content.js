@@ -92,11 +92,15 @@
     { file: "wallpapers/wallpaper-8.jpg", label: "Wallpaper 8" },
     { file: "wallpapers/wallpaper-9.jpg", label: "Wallpaper 9" },
     { file: "wallpapers/wallpaper-11.jpg", label: "Wallpaper 11" },
+    { file: "wallpapers/wallpaper-12.jpg", label: "Wallpaper 12" },
     { file: "wallpapers/wallpaper-13.jpg", label: "Wallpaper 13" },
     // A flat #000000 field. The file is 8x8 on purpose: background-size:
     // cover stretches it to any screen and the result is pixel-identical to
     // a full-resolution black image, at 74 bytes instead of 36 KB.
     { file: "wallpapers/wallpaper-14.png", label: "Solid Black" },
+    { file: "wallpapers/wallpaper-15.jpg", label: "Wallpaper 15" },
+    { file: "wallpapers/wallpaper-16.jpg", label: "Wallpaper 16" },
+    { file: "wallpapers/wallpaper-17.jpg", label: "Wallpaper 17" },
   ];
 
   /** Logo shown above the search bar in search mode. */
