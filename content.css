@@ -307,12 +307,29 @@ html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app {
   z-index: 9999 !important;
 }
 
-/* The centered bar should not read as a "bar": make its ground transparent. */
+/* The centered bar should not read as a "bar": make its ground transparent.
+   The wildcard child is deliberate. YouTube does not paint the masthead
+   background on the masthead itself but on a separate sheet behind it
+   (#frosted-glass), which is a child of #masthead-container — so it followed
+   the bar into the middle of the screen and drew a black band right across
+   it. Naming elements one by one has already failed once here; every direct
+   child of the container is a ground, and none of them may paint. The search
+   box sits deeper, so it keeps its own. */
 html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app,
+html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app > *,
 html.ymin-on.ymin-blocked:not(.ymin-safe) ytd-masthead,
 html.ymin-on.ymin-blocked:not(.ymin-safe) ytd-masthead #container.ytd-masthead,
 html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead #container {
   background: transparent !important;
+}
+
+/* A backdrop filter would keep the band visible as a blurred strip even with
+   a transparent background, so it goes too. */
+html.ymin-on.ymin-blocked:not(.ymin-safe) #frosted-glass,
+html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app > * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
 }
 
 /* Widen the box like a search engine home page and scale it up slightly.
@@ -540,6 +557,8 @@ html.ymin-on.ymin-wallpaper ytd-watch-flexy,
 html.ymin-on.ymin-wallpaper ytd-two-column-search-results-renderer,
 html.ymin-on.ymin-wallpaper #primary.ytd-watch-flexy,
 html.ymin-on.ymin-wallpaper #masthead-container.ytd-app,
+html.ymin-on.ymin-wallpaper #masthead-container.ytd-app > *,
+html.ymin-on.ymin-wallpaper #frosted-glass,
 html.ymin-on.ymin-wallpaper ytd-masthead,
 html.ymin-on.ymin-wallpaper ytd-masthead #container.ytd-masthead,
 html.ymin-on.ymin-wallpaper #masthead #container {
