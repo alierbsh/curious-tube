@@ -73,34 +73,39 @@
    *
    * size / position are optional. The images differ in composition, so each
    * one may define its own framing; without them the CSS defaults (cover /
-   * center) apply. Wallpaper 1 carries a white caption band across its
+   * center) apply. Wallpaper 0 carries a white caption band across its
    * middle, so it is scaled up and shifted down — otherwise the band lands
    * right behind the search bar.
+   *
+   * File names are kept in step with this list: wallpaper-0 upward, in the
+   * order the grid shows them. The name IS the stored preference, so
+   * renumbering silently repoints anyone's saved choice — do it only
+   * deliberately, as part of a rename like this one.
    */
   const WALLPAPERS = [
     {
-      file: "wallpapers/wallpaper-1.png",
-      label: "Wallpaper 1",
+      file: "wallpapers/wallpaper-0.png",
+      label: "Wallpaper 0",
       size: "max(130%, 190vh)",
       position: "center 15%",
     },
+    { file: "wallpapers/wallpaper-1.jpg", label: "Wallpaper 1" },
     { file: "wallpapers/wallpaper-2.jpg", label: "Wallpaper 2" },
     { file: "wallpapers/wallpaper-3.jpg", label: "Wallpaper 3" },
     { file: "wallpapers/wallpaper-4.jpg", label: "Wallpaper 4" },
+    { file: "wallpapers/wallpaper-5.jpg", label: "Wallpaper 5" },
     { file: "wallpapers/wallpaper-6.jpg", label: "Wallpaper 6" },
     { file: "wallpapers/wallpaper-7.jpg", label: "Wallpaper 7" },
     { file: "wallpapers/wallpaper-8.jpg", label: "Wallpaper 8" },
     { file: "wallpapers/wallpaper-9.jpg", label: "Wallpaper 9" },
-    { file: "wallpapers/wallpaper-11.jpg", label: "Wallpaper 11" },
-    { file: "wallpapers/wallpaper-12.jpg", label: "Wallpaper 12" },
-    { file: "wallpapers/wallpaper-13.jpg", label: "Wallpaper 13" },
+    { file: "wallpapers/wallpaper-10.jpg", label: "Wallpaper 10" },
     // A flat #000000 field. The file is 8x8 on purpose: background-size:
     // cover stretches it to any screen and the result is pixel-identical to
     // a full-resolution black image, at 74 bytes instead of 36 KB.
-    { file: "wallpapers/wallpaper-14.png", label: "Solid Black" },
-    { file: "wallpapers/wallpaper-15.jpg", label: "Wallpaper 15" },
-    { file: "wallpapers/wallpaper-16.jpg", label: "Wallpaper 16" },
-    { file: "wallpapers/wallpaper-17.jpg", label: "Wallpaper 17" },
+    { file: "wallpapers/wallpaper-11.png", label: "Solid Black" },
+    { file: "wallpapers/wallpaper-12.jpg", label: "Wallpaper 12" },
+    { file: "wallpapers/wallpaper-13.jpg", label: "Wallpaper 13" },
+    { file: "wallpapers/wallpaper-14.jpg", label: "Wallpaper 14" },
   ];
 
   /** Logo shown above the search bar in search mode. */
