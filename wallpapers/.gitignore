@@ -1,0 +1,7 @@
+# Only the converted wallpapers belong in the repository. Source downloads and
+# the temp files image tools leave behind stay on disk but out of git — and out
+# of the packaged extension, which ships everything under wallpapers/*.
+*
+!.gitignore
+!wallpaper-*.jpg
+!wallpaper-*.png
