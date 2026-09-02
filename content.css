@@ -794,7 +794,10 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
 .ymin-dock {
   position: fixed !important;
   top: auto !important;
-  bottom: 44px !important;
+  /* Clear of YouTube's own bottom-right furniture: on a watch page the
+     player's control row and the Like/Share/Save buttons live down there,
+     and a dock sitting on top of them swallowed the clicks. */
+  bottom: 120px !important;
   right: 20px !important;
   left: auto !important;
   z-index: 99999 !important;

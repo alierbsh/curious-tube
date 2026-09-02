@@ -1,0 +1,24 @@
+EKRAN GORUNTULERI (Screenshots) — zorunlu alan, en az 1 tane
+=============================================================
+
+Bu klasor bilerek bos. Ekran goruntusu, uzantinin gercekte nasil
+gorundugunu gostermek zorunda; uretilmis bir gorsel koymak magaza
+politikasina aykiri olur ve incelemede takilir.
+
+Gerekli olcu:  1280x800  (veya 640x400)
+Format:        JPEG ya da 24-bit PNG — ALFA KANALI OLMAYACAK
+Adet:          en fazla 5
+
+Onerilen 4 kare:
+  1) Bos ana sayfa — logo, ortadaki arama cubugu, duvar kagidi
+  2) Ayarlar paneli acik — Wallpapers sekmesi, duvar kagidi izgarasi
+  3) Ayarlar paneli acik — Settings sekmesi, alti anahtar gorunur
+  4) Bir video sayfasi — yorumlar/aciklama gizli, sag alt kose butonlari
+
+Nasil cekilir (macOS):
+  Cmd+Shift+4 sonra Space -> pencereye tikla  (pencere golgesi olmadan
+  istiyorsan tiklarken Option'a basili tut)
+
+Cektiklerini bu klasore at, bana soyle: tam 1280x800'e olceklendirip
+alfa kanalini kaldirir, magazanin istedigi formata cevirir ve buraya
+hazir dosyalar olarak birakirim.
