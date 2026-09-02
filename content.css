@@ -1259,3 +1259,23 @@ html:not(.ymin-on) .ymin-dock-btn {
 .ymin-switch.is-on .ymin-knob {
   transform: translateX(18px);
 }
+
+/* ---------------------------------------------------------------------
+   11) FULLSCREEN — the video is the page
+   ---------------------------------------------------------------------
+   content.js sets .ymin-fullscreen on <html> while a video is playing
+   fullscreen. Everything of ours that floats over the page steps aside:
+   in fullscreen there is no page left to decorate, only someone's film.
+
+   Deliberately at the end of the file. #ymin-account is shown by a rule of
+   equal specificity (html.ymin-on #ymin-account), so this one only wins by
+   coming later — moving this block up would silently stop hiding it.
+
+   Nothing here is a lock-out risk: leaving fullscreen restores the dock,
+   and the state is entirely under the user's control. */
+
+html.ymin-fullscreen .ymin-dock,
+html.ymin-fullscreen #ymin-account,
+html.ymin-fullscreen #ymin-logo {
+  display: none !important;
+}

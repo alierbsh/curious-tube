@@ -359,6 +359,28 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Fullscreen                                                          */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Marks <html> while a video is playing fullscreen, so our own floating
+   * controls can get out of the way. In fullscreen the video IS the page;
+   * anything of ours drawn over it is litter on someone's film.
+   *
+   * Two signals, because one is not enough: the Fullscreen API is
+   * authoritative, but YouTube also has its own fullscreen layout that it
+   * marks on ytd-watch-flexy, and the two do not always move together.
+   */
+  function isFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+    return Boolean(document.querySelector("ytd-watch-flexy[fullscreen]"));
+  }
+
+  function syncFullscreen() {
+    root.classList.toggle("ymin-fullscreen", isFullscreen());
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Routing                                                             */
   /* ------------------------------------------------------------------ */
 
@@ -1000,6 +1022,7 @@
         // a querySelector on every mutation batch.
         learnAccount();
         renderAccount();
+        syncFullscreen();
         stripPlaceholder();
         if (root.classList.contains("ymin-blocked")) focusSearch();
       }, delay)
@@ -1047,6 +1070,7 @@
     renderLogo();
     renderNavLogo();
     renderAccount();
+    syncFullscreen();
     stripPlaceholder();
     settle();
 
@@ -1136,4 +1160,10 @@
   window.addEventListener("yt-navigate-finish", apply, true);
   window.addEventListener("yt-page-data-updated", apply, true);
   window.addEventListener("popstate", apply, true);
+
+  // Entering or leaving fullscreen does not navigate, so it needs its own
+  // hook. The webkit- prefixed event is still what some YouTube paths fire.
+  ["fullscreenchange", "webkitfullscreenchange"].forEach((evt) => {
+    document.addEventListener(evt, syncFullscreen, true);
+  });
 })();
