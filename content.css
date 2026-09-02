@@ -778,31 +778,38 @@ html.ymin-on #ymin-account:not(.has-avatar)::after {
    miniplayer) sit in the low thousands. The values here are far above both
    so the button can never be buried. */
 
-/* --- The corner dock: bottom-right, on every route, in every state -----
-   One fixed anchor holding the round buttons, stacked upward from the gear.
-   The dock owns the position so buttons can be added or hidden without any
-   arithmetic; each button is a plain flex item.
+/* --- The dock: pinned to the middle of the right edge ------------------
+   One fixed anchor holding the round buttons; the dock owns the position so
+   buttons can be added or removed without any arithmetic, and each button is
+   a plain flex item.
+
+   Why the vertical middle rather than a corner: YouTube stacks its own
+   furniture along the BOTTOM of a watch page — the player's control row, the
+   floating queue button, and the Share/Ask/Save row under the video. Every
+   bottom offset we tried landed on one of them and swallowed the clicks.
+   The middle of the right edge is the one strip YouTube leaves empty on
+   every route; the masthead owns the top, the guide owns the left.
+
+   Centring with top: 50% + translateY(-50%) rather than a fixed offset, so
+   the dock stays put whatever the viewport height and however many buttons
+   the stack grows to.
 
    The gear is a fixed landmark: the user learns where it is once, and it is
    still there after the master switch turns everything else off. Anchoring
    it to the state it controls would move it exactly when it is needed most.
-   That is why nothing in this block is gated on .ymin-on.
-
-   The bottom-right corner is also the only corner YouTube never claims on
-   any route — the masthead owns the top, the guide owns the left. */
+   That is why nothing in this block is gated on .ymin-on. */
 
 .ymin-dock {
   position: fixed !important;
-  top: auto !important;
-  /* Clear of YouTube's own bottom-right furniture: on a watch page the
-     player's control row and the Like/Share/Save buttons live down there,
-     and a dock sitting on top of them swallowed the clicks. */
-  bottom: 120px !important;
+  top: 50% !important;
+  bottom: auto !important;
   right: 20px !important;
   left: auto !important;
+  transform: translateY(-50%) !important;
   z-index: 99999 !important;
   display: flex !important;
-  /* The gear is the last child, so the stack grows upward from it. */
+  /* The gear stays the last child, so it keeps the same place in the stack
+     as shortcuts are added above it. */
   flex-direction: column !important;
   align-items: center !important;
   gap: 12px !important;
