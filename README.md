@@ -2,341 +2,207 @@
 
 > Watch what you're curious about, not the algorithm's dictate.
 
-YouTube'u bir arama motoruna indirgeyen Chrome eklentisi (Manifest V3).
-Hesabinizdan cikis yapmadan, ana sayfa akisi / sol menu / oneriler / Shorts
-gibi dikkat dagitici her seyi gizler; geriye **arama cubugu, arama butonu ve
-arama sonuclari** kalir. Abonelikler bir istisnadir: algoritma degil sizin
-kendi listeniz oldugu icin bosaltilmaz, dock'tan tek tikla acilir.
+A Chrome extension (Manifest V3) that reduces YouTube to a search engine.
+Without logging you out, it hides the home feed, the sidebar, the
+recommendations, Shorts and everything else that competes for your attention;
+what is left is the **search box, the search button and the search results**.
+Subscriptions are the one exception — that list is yours, not the
+algorithm's — and it stays one click away in the dock.
 
-## Ne gizlenir, ne kalir
+## What it hides
 
-| Gizlenir | Kalir |
+| Hidden | Kept |
 | --- | --- |
-| Ana sayfa akisi, Kesfet, Trendler ve diger `/feed/*` sayfalari | Arama cubugu + arama butonu |
-| Sol menu (guide) ve mini menu | Arama sonuclari listesi |
-| Ust bardaki avatar (yerine kendi hesap baglantimiz gelir) | Abonelikler (`/feed/subscriptions`) ve hesap merkezi (`/feed/you`) |
-| Ust bardaki logo, olustur ve bildirim dugmeleri | Video oynatici (`/watch`) |
-| Izleme sayfasinda "Siradaki" onerileri; yorumlar ve aciklama (ikisi de panelden geri acilabilir) | Video basligi |
-| Shorts (her yerde; `/shorts/<id>` -> `/watch?v=<id>`) | |
-| Arama gecmisi ve otomatik tamamlama onerileri (dropdown) | |
-| Reklamlar, promosyon balonlari, bitis ekrani kartlari | |
+| Home feed, Explore, Trending and the other `/feed/*` pages | Search box and search button |
+| Sidebar (guide) and mini guide | Search results |
+| Top-bar avatar (replaced by our own account link) | Subscriptions (`/feed/subscriptions`) and the account hub (`/feed/you`) |
+| Top-bar logo, create and notification buttons | The player (`/watch`) and the video title |
+| "Up next" recommendations, comments and description (the last two can be switched back on) | |
+| Shorts everywhere (`/shorts/<id>` → `/watch?v=<id>`) | |
+| Search history and autocomplete suggestions | |
+| Ads, promo bubbles, end-screen cards | |
 
-### Hangi rota bosaltilir
+Routing is decided by `currentPage()` in `content.js`. `/`, `/feed/trending`,
+`/feed/explore`, `/feed/storefront` and `/gaming` are emptied, and so is
+anything else that starts with `/feed/` — except `/feed/subscriptions` and
+`/feed/you`, which are left alone because they are your own lists and both are
+reachable from the dock or the account link; emptying them would turn their own
+buttons into dead links. `/results` and `/watch` get their own layouts, and
+everything else (channels, playlists) is untouched.
 
-Karar `content.js` icindeki `currentPage()` fonksiyonunda verilir:
+Your session lives in cookies, so **you stay signed in** — only the account UI
+disappears.
 
-| Rota | Sonuc |
-| --- | --- |
-| `/`, `/feed/trending`, `/feed/explore`, `/feed/storefront`, `/gaming` | Bosaltilir (`BLOCKED_PATHS`) |
-| `/feed/` ile baslayan diger her sey (`/feed/history`, `/feed/playlists`, `/feed/channels`...) | Bosaltilir (onek kurali) |
-| `/feed/you`, `/feed/subscriptions` | **Bosaltilmaz** (`ALLOWED_FEEDS`) |
-| `/results` | Arama sonuclari duzeni |
-| `/watch` | Izleme duzeni |
-| `/shorts/<id>` | Shorts kapaliyken `/watch?v=<id>` adresine cevrilir |
-| Digerleri (kanal sayfalari, oynatma listeleri...) | Dokunulmaz |
+## Install (developer mode)
 
-`ALLOWED_FEEDS` istisnasinin nedeni: bu iki sayfa algoritmanin degil
-kullanicinin kendi listesidir ve ikisi de dock'tan/hesap baglantisindan
-erisilir. Bosaltmak kendi dugmesini olu baglantiya cevirirdi.
+1. Open `chrome://extensions`.
+2. Turn on **Developer mode** in the top right.
+3. Click **Load unpacked** and pick this folder.
+4. Reload any open YouTube tab once.
 
-Kutuya tiklandiginda YouTube'un mavi odak cercevesi ezilir ve yerine
-**kirmizi** bir cerceve + yumusak hale gelir. Sadece renk ve golge degistigi
-icin kutu ne buyur ne kayar.
+## What you get
 
-Sayfanin tamamina secili duvar kagidi serilir (`cover` + `fixed`, yani
-kaydirirken kaymaz). Tek bir dosya degil, bir **katalog** vardir: `content.js`
-icindeki `WALLPAPERS` dizisi ile kullanicinin kendi yukledigi gorseller
-(bkz. "Ayarlar paneli"). Gorsel `content.css` icinden degil, `content.js`'in
-`--ymin-wallpaper` degiskenine yazdigi calisma zamani adresinden gelir:
-eklenti ici bir dosyanin yolu CSS'ten dogrudan cozulemez. Bos sayfada gorsel
-tam parlakligindadir; arama sonuclari ve izleme sayfasinda uzerine ince bir
-karartma serilir, boylece yazilar gorselin acik bolgelerinde de okunur.
+On an emptied page the search box sits in the **middle of the screen** and
+nothing else is on it: no greeting, and YouTube's stock "Search" placeholder is
+removed too. Run a search or open a video and the bar returns to its usual spot
+in the top bar. Focusing the box swaps YouTube's blue ring for a **red** one
+plus a soft glow — only color and shadow change, so the box neither grows nor
+shifts.
 
-`logo.png` iki yerde kullanilir ve ikisi birbirini disler:
+A wallpaper is spread across the whole page (`cover` + `fixed`, so it does not
+scroll). There is a whole catalog rather than one file: the built-in images in
+`wallpapers/` plus whatever you upload. The image is applied at runtime through
+the `--ymin-wallpaper` variable, because a path inside the extension cannot be
+resolved from CSS alone. It shows at full brightness on the blank page and gets
+a light scrim on results and watch pages so text stays readable.
 
-- **Bos sayfada** arama cubugunun hemen ustunde buyuk halde durur.
-- **Icerik sayfalarinda** (arama sonuclari, izleme) ust barin sol ustunde,
-  YouTube'un kendi logosunun yerinde kucuk halde durur ve **ana sayfa
-  dugmesi** olarak calisir.
+`logo.png` appears in two mutually exclusive places: large above the search box
+on the blank page, and small in the top-left corner of content pages, where it
+takes over as the **home button**. It does not replace YouTube's own home link —
+that `<a href="/">` stays in the DOM and we only hide the YouTube mark inside it
+and drop our image in — so clicks still go through YouTube's SPA routing (no
+full reload) and keyboard access is unaffected.
 
-Sol ustteki logo, YouTube'un ana sayfa baglantisinin yerine gecmez; o
-`<a href="/">` elemani DOM'da kalir, yalnizca icindeki YouTube isareti gizlenip
-kendi gorselimiz ayni baglantinin icine eklenir. Boylece tiklama YouTube'un
-kendi SPA yonlendirmesiyle calisir (tam sayfa yenilemesi olmaz) ve klavye
-erisimi bozulmaz. Baglanti bulunamazsa yedek olarak kendi `<a href="/">`
-baglantimiz kurulur.
+### The account link
 
-### Sag ustteki hesap baglantisi
+The top-bar avatar is hidden, but our own link (`#ymin-account`) takes the
+top-right corner: a round avatar that opens **your own channel**.
 
-Ust bardaki avatar gizlenir, ama yerine kendi baglantimiz (`#ymin-account`)
-sag ust koseye konur: yuvarlak avatar, tiklaninca **kendi kanaliniz**.
+Neither the address nor the avatar is guessed; both are learned from YouTube's
+DOM and stored in `chrome.storage.local`. The avatar is read from the top-bar
+`img` on `settle()` retries, since Polymer paints it late. The channel address
+comes from YouTube's account header, and on `/feed/you` a fallback looks at
+channel links outside foreign scopes (menus, shelves, video cards) and accepts
+one only if there is exactly **one** candidate — ambiguity counts as failure,
+because sending you to the wrong channel is worse than leaving the link where it
+is. Until it is learned, the link points at `/feed/you`, so it is never dead.
+Once learned it opens the channel's **`/videos`** tab, since the main tab shows
+the trailer and featured content instead of uploads.
 
-Adres ve avatar tahmin edilmez, YouTube'un kendi DOM'undan **ogrenilir** ve
-`chrome.storage.local` icinde (`myChannelUrl`, `myAvatarUrl`) saklanir:
+### Dock and settings panel
 
-- Avatar, ust bardaki `img`'den okunur. Polymer bunu gec cizdigi icin okuma
-  `settle()` tekrarlarina bindirilmistir; her mutation'da sorgu yapilmaz.
-- Kanal adresi, YouTube'un hesap basligindan
-  (`ytd-active-account-header-renderer`) alinir. O eleman DOM'da yoksa ve
-  sayfa `/feed/you` ise `findOwnChannelOnHub()` devreye girer: menu,
-  raf ve video kartlari gibi **baskasina ait** kapsamlarin disinda kalan
-  kanal baglantilarina bakar ve yalnizca **tek** bir aday varsa kabul eder.
-  Belirsizlik basarisizlik sayilir; kullaniciyi yanlis kanala gondermek,
-  baglantiyi oldugu yerde birakmaktan kotudur.
-- Ogrenilene kadar baglanti `/feed/you` adresine gider (`ACCOUNT_FALLBACK`),
-  yani hicbir zaman olu bir baglanti olmaz.
-- Ogrenildikten sonra kanalin **`/videos`** sekmesine gider: kanalin ana
-  sekmesi fragman ve one cikanlari gosterir, yuklemeleri degil.
+A small dock sits at the **vertical middle of the right edge**. It is on every
+page and stays put **even when the extension is off**, since that gear is the
+only way to switch it back on; it hides in fullscreen. The middle of the right
+edge is the one strip YouTube leaves free on every route — every bottom offset
+we tried collided with the player controls, the floating queue button or the
+Share/Save row and swallowed clicks. Above the gear is a **Subscriptions**
+shortcut, a real `<a href="/feed/subscriptions">`, so middle-click opens it in a
+new tab.
 
-Bosaltilan sayfalarda (ana sayfa, kesfet, trendler...) arama cubugu **ekranin
-tam ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
-yoktur, kutunun icindeki stok "Ara" / "Search" yazisi da `content.js`
-tarafindan silinir. Bir arama yapildiginda ya da video acildiginda bar ust
-bardaki standart yerine geri doner, sonuc ve izleme duzeni bozulmaz.
+The gear opens a panel with two tabs. **Wallpapers** is a grid: the first tile
+is a "+" card that uploads an image from your computer, then the built-in
+wallpapers, then your own uploads (hover for a delete button). Clicking one
+changes the background instantly. **Settings** has six switches and a storage
+summary:
 
-Oturumunuz cerezlerde durdugu icin **giris yapmis halde kalirsiniz**;
-sadece hesap arayuzu gorunmez olur.
-
-## Kurulum (gelistirici modu)
-
-1. Chrome'da `chrome://extensions` adresini acin.
-2. Sag ustten **Gelistirici modu**'nu (Developer mode) acin.
-3. **Paketlenmemis ogeyi yukle** (Load unpacked) deyip bu klasoru secin.
-4. YouTube acikken sayfayi bir kez yenileyin.
-
-## Dosyalar
-
-| Dosya | Isi |
-| --- | --- |
-| `manifest.json` | MV3 tanimi. `permissions` listesinde tek bir madde var: `storage` (tercihler ve yuklenen gorseller icin). Sayfaya erisim ayri bir izin degil, `content_scripts.matches` icindeki `*://www.youtube.com/*` ve `*://m.youtube.com/*` uzerinden gelir -- magaza panelinde "host permission" diye gorunen sey budur. |
-| `content.css` | Asil gizleme katmani. `document_start` ile enjekte edildigi icin sayfa hic titremez. |
-| `content.js` | Cekirdek: SPA rota takibi (`currentPage`), Shorts yonlendirmesi, placeholder temizligi, sonradan yuklenen reklam/raf dugumlerinin temizligi (`MutationObserver` + `sweep`), duvar kagidi katalogu ve uygulanmasi, kullanicinin yukledigi gorseller ve kota yonetimi, ozellik anahtarlarinin `<html>` siniflarina yansitilmasi, hesap baglantisi (`learnAccount`), tercihlerin `chrome.storage.local` + senkron `localStorage` onbellegi, arama kutusu emniyeti (`ensureSearchVisible`). Ayarlar arayuzunun kullandigi API'yi `window.__curiousYouTube` uzerinden acar. |
-| `logo.png` | Arama modunda cubugun ustunde gosterilen logo. `web_accessible_resources` icinde tanimlidir. |
-| `settings-ui.js` | Sag kenarin ortasindaki dock (Subscriptions kisayolu + disli) ve cekmece panel: duvar kagidi izgarasi, "+" karti ile gorsel yukleme (canvas uzerinde kucultup yeniden kodlama), alti ozellik anahtari, depolama ozeti, odak tuzagi ve Escape. Yalnizca yapi ve davranis; gorunum `content.css` 10. bolumde. |
-| `wallpapers/` | Yerlesik duvar kagitlari. Katalogda su an 11 tane var: `wallpaper-0.png`, `wallpaper-1..4.jpg`, `wallpaper-8..10.jpg`, `wallpaper-11.png` (duz siyah, 8x8 px), `wallpaper-12.jpg`, `wallpaper-14.jpg`. `manifest.json` icinde `web_accessible_resources: ["wallpapers/*"]` olarak tanimlidir; adresleri calisma aninda `chrome.runtime.getURL` ile alinir. |
-| `small-logo.png` | Ikonlarin kaynak gorseli (yalnizca uretim zamani; eklenti calisirken kullanilmaz). |
-| `icons/generate_icons.py` | `small-logo.png`'yi okuyup 16/48/128 px ikonlari uretir: `python3 icons/generate_icons.py` |
-
-## Ozellestirme
-
-**Avatari / hesap menusunu geri getirmek** icin `content.css` 1. bolumundeki
-`#end.ytd-masthead` satirlarini iceren blogu silin ya da su kurali dosyanin
-sonuna ekleyin:
-
-```css
-html.ymin-on ytd-masthead #end.ytd-masthead { display: flex !important; }
-html.ymin-on ytd-masthead #avatar-btn { display: block !important; }
-```
-
-Bastaki `html.ymin-on` sart: gizleyen kural da ayni onekle yaziliyor ve iki
-taraf da `!important` oldugu icin kazanani ozgulluk (specificity) belirliyor.
-Oneksiz bir kural dosyanin sonunda bile kaybeder.
-
-**Yorumlari, aciklamayi ya da Shorts'u geri acmak** icin CSS'e dokunmayin:
-panelin Settings sekmesindeki ilgili anahtari acin. Kurallar
-`ymin-hide-comments` / `ymin-hide-description` / `ymin-hide-shorts`
-siniflarina bagli ve bu siniflari anahtarlar yonetir. Asagidaki elle
-duzenleme tarifleri yalnizca **panelde karsiligi olmayan** seyler icindir.
-
-**Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
-tamamlama onerileri" blogunu silin.
-
-**Eklenti ikonunu degistirmek** icin kok dizindeki `small-logo.png` dosyasini
-degistirip `python3 icons/generate_icons.py` calistirin. Script kare olmayan
-kaynaklari once merkezden kare kirpar (sikistirip ezmez) ve alan agirlikli
-ortalamayla kucultur. Bagimlilik gerekmez.
-
-**Logoyu degistirmek** icin kok dizindeki `logo.png` dosyasini degistirin.
-Boyutlar `content.css` 9.1 bolumunde: buyuk logo `max-height`, ust bardaki
-kucuk logo `#ymin-nav-logo` icindeki `height`. Dikkat: mevcut
-dosyanin yuksekliginin yalnizca %44'u dolu (ust/altta seffaf pay var), bu
-yuzden 150px degeri ekranda ~66px'lik bir logoya denk geliyor. Kirpilmis bir
-dosya koyarsaniz `max-height`'i ~70px'e cekip `margin-bottom`'u buyutun.
-
-**Varsayilan arka plani degistirmek** icin en pratik yol paneldeki izgaradan
-baska bir duvar kagidi secmektir; secim `chrome.storage.local` icinde
-`selectedWallpaper` olarak kalir. Kod tarafindaki varsayilan
-`WALLPAPERS[0]`, yani `wallpapers/wallpaper-0.png`: hem ilk kurulumda hem de
-secili gorsel bulunamadiginda buna dusulur (`entryFor`).
-
-Dosyayi degistirirken adi korursaniz baska hicbir yere dokunmak gerekmez.
-Yeni dosya eklemek icin de `manifest.json`'a dokunulmaz (`wallpapers/*`
-jokeri zaten tanimli); yalnizca `WALLPAPERS` dizisine bir satir eklenir.
-
-Yerlesim `content.css` 8. bolumdeki `background-size / position / attachment`
-degerlerinden gelir; varsayilan `cover` / `center`. Katalogdaki bir satir
-kendi `size` / `position` degerini verebilir. `wallpaper-0` bunu yapar
-(`max(130%, 190vh)` + `center 15%`): ortasindaki beyaz yazi bandi, ekranin
-ortasindaki arama cubugunun arkasina denk gelmesin diye gorsel buyutulup
-asagi kaydirildi. Dikey yuzde ne kadar kucukse gorsel o kadar asagi kayar.
-
-**Icerik sayfalarindaki karartmayi kaldirmak** icin 8. bolumdeki
-`html.ymin-on.ymin-wallpaper:not(.ymin-blocked)` kuralini silin. O zaman gorsel her
-sayfada tam parlakliginda gorunur (sonuc yazilari acik zeminlerde okunmayabilir).
-
-**Odak renginin tonunu degistirmek** icin `content.css` 1. bolumdeki
-`--ymin-focus-red` (ve halesi icin `--ymin-focus-glow`) degiskenlerini
-duzenleyin; ornegin `#ff0033` daha yumusak bir YouTube kirmizisidir.
-
-**Odak cercevesini tamamen kaldirmak** icin ayni bolumdeki "Focused" kuralini
-(`[has-focus]` / `:focus-within` seciciilerini tasiyan blok) silin. Boyutlar her iki durumda da degismez, cunku `border-width`,
-`padding` ve `width/height` degerlerine hic dokunulmuyor.
-
-**Placeholder'i geri getirmek** icin `content.js` icindeki
-`stripPlaceholder()` cagrilarini kaldirin.
-
-**Arama cubugunu her zaman ustte tutmak** icin 3. bolumdeki
-`html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app`
-kuralindaki `transform` satirini silin.
-
-**Baska bir sayfayi da bosaltmak** icin `content.js` icindeki
-`BLOCKED_PATHS` kumesine yolu ekleyin (ornek: `"/podcasts"`). `/feed/` ile
-baslayan sayfalar icin buna gerek yoktur; onlar zaten onek kuraliyla
-bosaltilir. Tersine, bir `/feed/` sayfasini **acik birakmak** icin
-`ALLOWED_FEEDS` kumesine ekleyin.
-
-## Ayarlar paneli
-
-Ekranin **sag kenarinin dikey ortasinda** kucuk bir dock durur. Her sayfada
-gorunur (yalnizca bos sayfada degil) ve **eklenti kapaliyken bile** yerinde
-kalir: `content.css` 10. bolumu bilerek `.ymin-on`'a baglanmamistir, cunku
-eklentiyi geri acmanin tek yolu bu disli. Tam ekranda dock gizlenir
-(11. bolum) -- tam ekranda video sayfanin kendisidir.
-
-Neden kose degil de dikey orta: YouTube kendi arayuzunu izleme sayfasinin ALT
-seridine yiginiyor (oynatici kontrol satiri, yuzen kuyruk dugmesi, videonun
-altindaki Paylas/Kaydet satiri). Denenen her alt ofset bunlardan birinin
-ustune denk gelip tiklamalari yutuyordu; sag kenarin ortasi YouTube'un her
-rotada bos biraktigi tek serit.
-
-Dislinin **ustunde bir `Subscriptions` kisayolu** durur (`settings-ui.js`
-icindeki `DOCK_LINKS`); gercek bir `<a href="/feed/subscriptions">` oldugu
-icin orta tikla yeni sekmede acilir. Yigin yukari dogru buyudugu icin yeni
-bir kisayol eklemek dislinin yerini oynatmaz.
-
-Disli paneli acar; panel iki sekmeden olusur:
-
-- **Wallpapers** — izgaranin ilk kutusu "+" kartidir: bilgisayarinizdan gorsel
-  yukler. Ardindan `wallpapers/` klasorundeki yerlesik gorseller, en sonda da
-  yukledikleriniz listelenir (uzerlerine gelince kucuk bir silme dugmesi
-  cikar). Birine tiklandiginda arka plan aninda degisir ve secim
-  `chrome.storage.local` icinde `selectedWallpaper` olarak saklanir.
-- **Settings** — alti anahtar, altinda da depolama kullanimi ozeti:
-
-| Anahtar | Ne yapar | Varsayilan |
+| Switch | What it does | Default |
 | --- | --- | --- |
-| Extension Enabled | Ana anahtar. Kapatilinca sayfa yeniden yuklenir ve eklenti hicbir seye dokunmaz. | Acik |
-| Comments | Video altindaki yorum bolumunu **gosterir**. | Kapali (yorumlar gizli) |
-| Description | Video aciklamasini ve acilan panellerini **gosterir**. | Kapali |
-| Shorts | Shorts raflarini, Shorts sonuclarini ve menudeki Shorts girisini **gosterir**. | Kapali |
-| Grayscale Thumbnails | Kucuk resimlerin rengini alir; uzerine gelince renk geri gelir. | Kapali |
-| Shuffle Wallpaper | Ana sayfa her acildiginda rastgele bir duvar kagidi; havuza kendi yukledikleriniz de dahildir (`shuffleWallpaper`). | Kapali |
+| Extension Enabled | Master switch. Turning it off reloads the page and the extension touches nothing. | On |
+| Comments | **Shows** the comment section under a video. | Off |
+| Description | **Shows** the video description and its panels. | Off |
+| Shorts | **Shows** Shorts shelves, Shorts results and the Shorts menu entry. | Off |
+| Grayscale Thumbnails | Drains the color from thumbnails; hovering brings it back. | Off |
+| Shuffle Wallpaper | Picks a random wallpaper each time the home page opens, uploads included. | Off |
 
-Comments / Description / Shorts anahtarlari "bunu goster" diye okunur; bu
-yuzden varsayilanlari `false` ve kapali halleri gizleyen haldir. Grayscale
-ters yonde calisir: sinif acikken eklenir.
+Comments / Description / Shorts read as "show this", which is why they default
+to off. Grayscale works the other way round: its class is added when on.
 
-**Ana anahtar** iki sey yapar: `<html>` uzerindeki `ymin-on` sinifi kalkar
-(content.css'teki her kural bu sinifa bagli oldugu icin stil katmani tek
-hamlede devre disi kalir) ve ozellik siniflari da ana anahtara bagli oldugu
-icin yorumlar, aciklama, Shorts ve kucuk resim renkleri YouTube'un gonderdigi
-haliyle kalir. Anahtari ceviren sekme kendini yeniler (canli bir SPA'yi elle
-geri sarmak yerine temiz sayfadan acmak daha guvenli); ayni anda acik diger
-sekmeler yenilenmez, `storage.onChanged` uzerinden sessizce toparlanir.
+The master switch removes the `ymin-on` class from `<html>`, which disables the
+whole style layer in one move, and the feature classes hang off it too. The tab
+that flips it reloads itself (a clean load beats rewinding a live SPA by hand);
+other open tabs catch up quietly through `storage.onChanged`. **The Shorts
+redirect follows this switch:** while Shorts are off, `/shorts/<id>` becomes
+`/watch?v=<id>`.
 
-**Shorts yonlendirmesi bu anahtara baglidir:** Shorts kapaliyken (varsayilan)
-`/shorts/<id>` adresi `/watch?v=<id>` adresine cevrilir; anahtar aciksa
-yonlendirme yapilmaz.
+### Uploads and storage
 
-### Yuklenen gorseller ve depolama
+An uploaded file is read as base64, but before it is stored it is **downscaled
+and re-encoded** on a canvas (2560 px longest edge, WebP, with lower-quality
+retries). Base64 is ~33% larger than binary, so a raw photo could fill the quota
+on its own; images under 700 KB are kept as-is so they are not degraded.
 
-Secilen dosya `FileReader` ile base64'e cevrilir, ancak depoya konmadan once
-bir canvas uzerinde **kucultulup yeniden kodlanir** (en uzun kenar 2560 px,
-WebP; gerekirse daha dusuk kalitede ikinci ve ucuncu deneme). Base64 ikili
-veriden ~%33 buyuk oldugu icin ham bir fotograf tek basina kotayi doldurabilir;
-700 KB altindaki kucuk gorseller ise bozulmasin diye oldugu gibi saklanir.
+Storage is deliberately split in two: `customWallpapers` holds only metadata
+(`{id, bytes, addedAt}`), while each image's base64 lives under its own
+`ymin:custom:<id>` key. That way opening a page fetches just the selected image
+instead of all of them. The guards are 3 MB per image, 12 images at most, and a
+512 KB safety margin checked with `getBytesInUse`; over the limit **nothing is
+written** and the panel says why.
 
-Depolama duzeni bilerek ikiye ayrildi:
+Preferences live in `chrome.storage.local`, shared across tabs and sessions. A
+copy of the small values also sits in the page's `localStorage` (`ymin:prefs`)
+where it can be read synchronously — `chrome.storage` is async, and this cache
+keeps the wallpaper from flashing wrong on the first paint. Only small values go
+there: the six switches, the selected wallpaper, the learned channel and avatar
+URLs, and the **ids** of uploaded images. Base64 data never does; it would eat
+the page's localStorage quota, which is shared with YouTube's own data. The
+switches have to be cached as well — otherwise a disabled extension would still
+apply everything at `document_start` and only undo it once `chrome.storage`
+answered, so the page the user turned off would flash into view. The ids are
+there for the same reason: shuffle makes its first pick before storage answers,
+and without them your own images could not be in that draw.
 
-| Anahtar | Icerik |
+## Files
+
+| File | What it is |
 | --- | --- |
-| `customWallpapers` | Yalnizca ust veri dizisi: `{id, bytes, addedAt}` |
-| `ymin:custom:<id>` | O gorselin base64 verisi (ayri anahtar) |
+| `manifest.json` | MV3 definition. The only entry in `permissions` is `storage`; page access is not a separate permission but comes from `*://www.youtube.com/*` and `*://m.youtube.com/*` in `content_scripts.matches` — that is what the store panel calls a "host permission". |
+| `content.css` | The hiding layer. Injected at `document_start`, so the page never flickers. |
+| `content.js` | The core: SPA route tracking, the Shorts redirect, placeholder cleanup, sweeping late-loading ad and shelf nodes, the wallpaper catalog, uploads and quota handling, feature classes on `<html>`, the account link, preferences and their sync cache, and the search-box safety valve. Exposes its API to the settings UI on `window.__curiousYouTube`. |
+| `settings-ui.js` | The dock and the drawer panel: wallpaper grid, upload card, the six switches, storage summary, focus trap and Escape. |
+| `wallpapers/` | Built-in wallpapers — 11 of them right now. Declared as `web_accessible_resources: ["wallpapers/*"]`, resolved at runtime with `chrome.runtime.getURL`. |
+| `logo.png` | Shown above the search bar and in the top bar. |
+| `small-logo.png`, `icons/generate_icons.py` | Icon source and the generator that turns it into 16/48/128 px icons (`python3 icons/generate_icons.py`). Build time only; neither is used while the extension runs. |
 
-Boylece sayfa acilirken tum gorseller okunmaz; sadece secili olanin anahtari
-getirilir. Kota korumalari: gorsel basina 3 MB tavan, en fazla 12 gorsel ve
-`getBytesInUse` ile yapilan kontrolde 512 KB'lik emniyet payi. Sinir asilirsa
-kayit **hic yazilmaz** ve panelde anlasilir bir uyari gosterilir.
+## Customizing
 
-Tercihler iki yerde tutulur: dogrusu `chrome.storage.local`, yani sekmeler ve
-oturumlar arasinda ortaktir. Ayrica sayfanin `localStorage`'inda
-(`ymin:prefs`) senkron okunabilen bir kopyasi vardir; `chrome.storage`
-asenkron oldugu icin ilk boyamada duvar kagidinin bir an yanlis gorunmesini
-bu onbellek engeller.
+To add a wallpaper, drop the file into `wallpapers/` and add a line to the
+`WALLPAPERS` array in `content.js` — the manifest already covers it with a
+wildcard. A catalog entry may set its own `size` and `position`; without them
+`cover` / `center` is used. Gaps in the numbering are intentional (5, 6, 7, 13
+and 15 are missing): **the file name is the stored preference**, so reusing a
+deleted image's number would silently move everyone who picked it to a different
+background.
 
-Onbellekte yalnizca **kucuk degerler** durur: alti anahtar (ana anahtar,
-yorumlar, aciklama, Shorts, gri kucuk resimler, karisik mod), secili duvar
-kagidi, ogrenilen kanal ve avatar adresi, bir de yuklenen gorsellerin
-**kimlikleri**. Base64 verisi asla buraya yazilmaz; sayfanin localStorage
-kotasini yer ve YouTube'un kendi verisiyle ayni alani paylasirdi.
+To change the icon, replace `small-logo.png` and run the generator; it
+center-crops non-square sources rather than squashing them, and needs no
+dependencies. To change the logo, replace `logo.png` — note that only about 44%
+of the current file's height is filled, so a cropped file will need its size
+rules adjusted.
 
-Anahtarlarin da onbellekte olmasi sart: olmasalardi kapatilmis bir eklenti
-`document_start` aninda her seyi yine uygular, ancak `chrome.storage`
-cevaplayinca geri alirdi — yani kullanicinin kapattigi sayfa bir an icin
-gorunurdu. Gorsel kimlikleri de ayni nedenle burada: karisik mod ilk
-cekilisini storage cevaplamadan yapar, kimlikler olmasa kendi gorselleriniz
-o cekilise giremezdi.
+Everything with a switch in the panel (comments, description, Shorts, grayscale,
+shuffle, the wallpaper) should be changed there, not in CSS. Beyond that, the
+hiding rules are grouped by topic in `content.css` and the blocked routes are
+the `BLOCKED_PATHS` and `ALLOWED_FEEDS` sets in `content.js`.
 
-**Yeni duvar kagidi eklemek:** dosyayi `wallpapers/` klasorune atin ve
-`content.js` icindeki `WALLPAPERS` dizisine bir satir ekleyin. Manifest'e
-dokunmaya gerek yoktur (`wallpapers/*` jokeri zaten tanimli). Gorselin
-kompozisyonu ozel bir kirpma istiyorsa satira `size` ve `position`
-ekleyebilirsiniz; verilmezse `cover` / `center` kullanilir.
+## Notes
 
-Numaralarda bosluk olmasi normaldir (su an 5, 6, 7, 13 ve 15 yok): **dosya
-adi saklanan tercihin ta kendisi**. Silinen bir gorselin numarasini baskasina
-vermek, o gorseli secmis kullanicilari sessizce baska bir arka plana baglar.
-Bu yuzden silinen numaralar bos birakilir, yeni gorsel siradaki numarayi alir.
+- The extension watches its own back: on every navigation it measures whether
+  the search box is really on screen, and if it is not, it adds `ymin-safe` to
+  `<html>`, which switches off suggestion hiding and centering. A broken
+  selector costs you those two features at worst — it never leaves you on a
+  blank screen. A warning shows up in the DevTools console when this happens.
+  If something still looks wrong, reload the extension from
+  `chrome://extensions` and refresh the YouTube tab.
+- YouTube changes its UI often; if a section reappears, its custom element
+  (`ytd-*`) has been renamed. Find the new name in DevTools and add it to the
+  matching part of `content.css`.
+- The CSS uses `:has()`, so Chrome 105 or newer is required.
 
-## Sorun giderme
+### Mobile (m.youtube.com) support is partial
 
-Eklenti kendini korur: `content.js` her gezinmede arama kutusunun gercekten
-ekranda olup olmadigini olcer. Kutu gizlenmis ya da gorunur alanin disina
-tasmissa `<html>` uzerine `ymin-safe` sinifini ekler; bu sinif CSS'teki
-**oneri gizleme** ve **ortalama** bloklarini komple kapatir. Yani hatali bir
-secici en kotu ihtimalle bu iki ozelligi devre disi birakir, sizi bos ekranda
-birakmaz. Boyle bir durumda DevTools konsolunda su uyari gorunur:
+The manifest matches `m` as well as `www`, but mobile YouTube uses an entirely
+different set of custom elements (`ytm-*` instead of `ytd-*`). The parts that do
+not depend on markup work there: the Shorts redirect, preferences and storage,
+the dock and settings panel, a handful of mobile-specific rules (bottom pivot
+bar, home grid, Shorts shelf, up-next), and the wallpaper on `<html>` — though
+mobile's own containers are not made transparent, so it stays mostly covered.
+Everything tied to `ytd-*` does not: top-bar cleanup, centering the search box,
+the emptied pages, comment and description hiding, results cleanup, the small
+top-bar logo, and learning the avatar (the account link still works, it just
+stays on `/feed/you`).
 
-```
-[CuriousTube] The search box is not visible; suggestion hiding and
-centering have been disabled in this tab.
-```
-
-Bir sey hala ters gorunuyorsa `chrome://extensions` -> eklentiyi **yenile**
-ve YouTube sekmesini bir kez tazeleyin.
-
-## Notlar
-
-- YouTube arayuzunu sik degistirir; bir bolum yeniden gorunmeye baslarsa
-  ilgili ozel elemanin adi (`ytd-*`) degismis demektir. DevTools ile yeni adi
-  bulup `content.css` icindeki uygun bolume eklemek yeterlidir.
-- CSS'te `:has()` kullanilir; Chrome 105 ve uzeri gerekir.
-
-### Mobil (m.youtube.com) destegi kismidir
-
-Manifest hem `www` hem `m` icin eslesir, ama mobil YouTube tamamen farkli
-ozel elemanlar kullanir (`ytm-*`), masaustu ise `ytd-*`. Kodu okuyarak cikan
-durum:
-
-| Calisir | Calismaz |
-| --- | --- |
-| `/shorts/<id>` yonlendirmesi (saf JS, isaretlemeden bagimsiz) | Ust bar temizligi, arama cubugunun ortalanmasi, bos sayfa (hepsi `ytd-*` / `#page-manager` seciciilerine bagli) |
-| Tercihler, depolama ve senkron onbellek | Izleme sayfasindaki yorum/aciklama gizleme ve arama sonuclari temizligi (5. ve 6. bolum, `ytd-*`) |
-| Dock ve ayarlar paneli (kendi elemanlarimiz, `ytd-*` gerektirmez) | Ust bardaki kucuk logo (`ytd-masthead` / `#masthead` bulunamaz) |
-| 9. bolumdeki mobil kurallari: alt pivot bar, ana sayfa izgarasi, Shorts rafi, "siradaki" onerileri | Avatarin ogrenilmesi (`AVATAR_SELECTORS` masaustu elemanlari); hesap baglantisi yine de calisir, `/feed/you`'da kalir |
-| Duvar kagidi `<html>` uzerine serilir | ...ama mobilin kendi kapsayicilari seffaflastirilmadigi icin buyuk olcude ortulu kalir |
-
-Pratikte bu cok az kisiyi ilgilendirir: Android'deki Chrome uzanti
-calistirmaz, yani `m.youtube.com` ancak masaustunde elle acildiginda
-gorunur. Yine de dogru olan sunu yazmaktir: **mobil duzen icin tam destek
-yoktur.**
+In practice this affects very few people — Chrome on Android does not run
+extensions, so `m.youtube.com` only shows up if you open it by hand on a
+desktop. Still, the honest summary is: **there is no full support for the mobile
+layout.**
