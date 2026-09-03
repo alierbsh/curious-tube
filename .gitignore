@@ -5,15 +5,10 @@
 .vscode/
 .idea/
 
-# Paketleme ciktisi
+# Packaging output
 *.zip
 *.crx
 *.pem
 
-# Upscayl gecici ciktilari
+# Upscayl temporary output
 wallpapers/.temp-*
-
-# Only the extension sources under src/ belong in the repository. The
-# packaging output and the store material stay on disk.
-/dist/
-/marketing/
