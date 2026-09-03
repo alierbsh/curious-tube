@@ -1,0 +1,26 @@
+YouTube opens on a wall of thumbnails somebody else picked for you.
+CuriousTube replaces that wall with a search bar.
+
+The home feed, the sidebar, the "Up next" rail and Shorts are gone. What is
+left is the part you came for: search, results, and the video itself, over a
+full-screen wallpaper you choose.
+
+You stay signed in and your account is untouched — subscriptions, history and
+watch progress all keep working. A small dock in the corner keeps
+Subscriptions one click away, and a single switch turns everything off when
+you want plain YouTube back. Nothing is deleted; it is only out of sight.
+
+You decide how far it goes:
+
+• Comments, description and Shorts — show or hide each one
+• Grayscale thumbnails, so a bright preview cannot pull you off course; hover
+  over one to bring its colour back
+• 11 built-in wallpapers or an image of your own, with an optional shuffle
+  that picks a new one every visit
+
+CuriousTube asks for a single permission: storage. It makes no network
+requests, has no server, no account and no analytics, and collects nothing at
+all. Your settings never leave your browser.
+
+Watch what you're curious about, not what the algorithm decided you would
+click.
