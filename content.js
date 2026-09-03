@@ -93,9 +93,6 @@
     { file: "wallpapers/wallpaper-2.jpg", label: "Wallpaper 2" },
     { file: "wallpapers/wallpaper-3.jpg", label: "Wallpaper 3" },
     { file: "wallpapers/wallpaper-4.jpg", label: "Wallpaper 4" },
-    { file: "wallpapers/wallpaper-5.jpg", label: "Wallpaper 5" },
-    { file: "wallpapers/wallpaper-6.jpg", label: "Wallpaper 6" },
-    { file: "wallpapers/wallpaper-7.jpg", label: "Wallpaper 7" },
     { file: "wallpapers/wallpaper-8.jpg", label: "Wallpaper 8" },
     { file: "wallpapers/wallpaper-9.jpg", label: "Wallpaper 9" },
     { file: "wallpapers/wallpaper-10.jpg", label: "Wallpaper 10" },
@@ -104,7 +101,6 @@
     // a full-resolution black image, at 74 bytes instead of 36 KB.
     { file: "wallpapers/wallpaper-11.png", label: "Solid Black" },
     { file: "wallpapers/wallpaper-12.jpg", label: "Wallpaper 12" },
-    { file: "wallpapers/wallpaper-13.jpg", label: "Wallpaper 13" },
     { file: "wallpapers/wallpaper-14.jpg", label: "Wallpaper 14" },
   ];
 
