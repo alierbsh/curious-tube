@@ -77,14 +77,18 @@ sadece hesap arayuzu gorunmez olur.
 
 ## Ozellestirme
 
-**Avatari / hesap menusunu geri getirmek** icin `content.css` icindeki
+**Avatari / hesap menusunu geri getirmek** icin `content.css` 1. bolumundeki
 `#end.ytd-masthead` satirlarini iceren blogu silin ya da su kurali dosyanin
 sonuna ekleyin:
 
 ```css
-ytd-masthead #end.ytd-masthead { display: flex !important; }
-ytd-masthead #avatar-btn { display: block !important; }
+html.ymin-on ytd-masthead #end.ytd-masthead { display: flex !important; }
+html.ymin-on ytd-masthead #avatar-btn { display: block !important; }
 ```
+
+Bastaki `html.ymin-on` sart: gizleyen kural da ayni onekle yaziliyor ve iki
+taraf da `!important` oldugu icin kazanani ozgulluk (specificity) belirliyor.
+Oneksiz bir kural dosyanin sonunda bile kaybeder.
 
 **Yorumlari geri acmak** icin `ytd-comments#comments` secicisini
 5. bolumdeki listeden cikarin.
@@ -122,23 +126,23 @@ ortasindaki arama cubugunun arkasina denk gelmesin diye gorsel buyutulup
 asagi kaydirildi. Dikey yuzde ne kadar kucukse gorsel o kadar asagi kayar.
 
 **Icerik sayfalarindaki karartmayi kaldirmak** icin 8. bolumdeki
-`html.ymin-wallpaper:not(.ymin-blocked)` kuralini silin. O zaman gorsel her
+`html.ymin-on.ymin-wallpaper:not(.ymin-blocked)` kuralini silin. O zaman gorsel her
 sayfada tam parlakliginda gorunur (sonuc yazilari acik zeminlerde okunmayabilir).
 
 **Odak renginin tonunu degistirmek** icin `content.css` 1. bolumdeki
 `--ymin-focus-red` (ve halesi icin `--ymin-focus-glow`) degiskenlerini
 duzenleyin; ornegin `#ff0033` daha yumusak bir YouTube kirmizisidir.
 
-**Odak cercevesini tamamen kaldirmak** icin ayni bolumdeki "Odakli hal"
-kuralini silin. Boyutlar her iki durumda da degismez, cunku `border-width`,
+**Odak cercevesini tamamen kaldirmak** icin ayni bolumdeki "Focused" kuralini
+(`[has-focus]` / `:focus-within` seciciilerini tasiyan blok) silin. Boyutlar her iki durumda da degismez, cunku `border-width`,
 `padding` ve `width/height` degerlerine hic dokunulmuyor.
 
 **Placeholder'i geri getirmek** icin `content.js` icindeki
 `stripPlaceholder()` cagrilarini kaldirin.
 
 **Arama cubugunu her zaman ustte tutmak** icin 3. bolumdeki
-`html.ymin-blocked #masthead-container.ytd-app` kuralindaki `transform`
-satirini silin.
+`html.ymin-on.ymin-blocked:not(.ymin-safe) #masthead-container.ytd-app`
+kuralindaki `transform` satirini silin.
 
 **Baska bir sayfayi da bosaltmak** icin `content.js` icindeki
 `BLOCKED_PATHS` kumesine yolu ekleyin (ornek: `"/feed/history"`).
@@ -207,8 +211,8 @@ secici en kotu ihtimalle bu iki ozelligi devre disi birakir, sizi bos ekranda
 birakmaz. Boyle bir durumda DevTools konsolunda su uyari gorunur:
 
 ```
-[CuriousTube] Arama kutusu gorunmuyor; oneri gizleme ve
-ortalama kurallari bu sekmede devre disi birakildi.
+[CuriousTube] The search box is not visible; suggestion hiding and
+centering have been disabled in this tab.
 ```
 
 Bir sey hala ters gorunuyorsa `chrome://extensions` -> eklentiyi **yenile**
