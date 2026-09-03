@@ -106,7 +106,6 @@
     { file: "wallpapers/wallpaper-12.jpg", label: "Wallpaper 12" },
     { file: "wallpapers/wallpaper-13.jpg", label: "Wallpaper 13" },
     { file: "wallpapers/wallpaper-14.jpg", label: "Wallpaper 14" },
-    { file: "wallpapers/wallpaper-15.jpg", label: "Wallpaper 15" },
   ];
 
   /** Logo shown above the search bar in search mode. */
