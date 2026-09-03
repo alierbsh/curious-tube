@@ -90,8 +90,11 @@ Bastaki `html.ymin-on` sart: gizleyen kural da ayni onekle yaziliyor ve iki
 taraf da `!important` oldugu icin kazanani ozgulluk (specificity) belirliyor.
 Oneksiz bir kural dosyanin sonunda bile kaybeder.
 
-**Yorumlari geri acmak** icin `ytd-comments#comments` secicisini
-5. bolumdeki listeden cikarin.
+**Yorumlari, aciklamayi ya da Shorts'u geri acmak** icin CSS'e dokunmayin:
+panelin Settings sekmesindeki ilgili anahtari acin. Kurallar
+`ymin-hide-comments` / `ymin-hide-description` / `ymin-hide-shorts`
+siniflarina bagli ve bu siniflari anahtarlar yonetir. Asagidaki elle
+duzenleme tarifleri yalnizca **panelde karsiligi olmayan** seyler icindir.
 
 **Arama onerilerini geri acmak** icin 1. bolumdeki "Arama gecmisi ve otomatik
 tamamlama onerileri" blogunu silin.
@@ -149,17 +152,56 @@ kuralindaki `transform` satirini silin.
 
 ## Ayarlar paneli
 
-Bos sayfada sag ust kosede bir disli butonu belirir; panel iki bolumden olusur:
+Ekranin **sag kenarinin dikey ortasinda** kucuk bir dock durur. Her sayfada
+gorunur (yalnizca bos sayfada degil) ve **eklenti kapaliyken bile** yerinde
+kalir: `content.css` 10. bolumu bilerek `.ymin-on`'a baglanmamistir, cunku
+eklentiyi geri acmanin tek yolu bu disli. Tam ekranda dock gizlenir
+(11. bolum) -- tam ekranda video sayfanin kendisidir.
+
+Neden kose degil de dikey orta: YouTube kendi arayuzunu izleme sayfasinin ALT
+seridine yiginiyor (oynatici kontrol satiri, yuzen kuyruk dugmesi, videonun
+altindaki Paylas/Kaydet satiri). Denenen her alt ofset bunlardan birinin
+ustune denk gelip tiklamalari yutuyordu; sag kenarin ortasi YouTube'un her
+rotada bos biraktigi tek serit.
+
+Dislinin **ustunde bir `Subscriptions` kisayolu** durur (`settings-ui.js`
+icindeki `DOCK_LINKS`); gercek bir `<a href="/feed/subscriptions">` oldugu
+icin orta tikla yeni sekmede acilir. Yigin yukari dogru buyudugu icin yeni
+bir kisayol eklemek dislinin yerini oynatmaz.
+
+Disli paneli acar; panel iki sekmeden olusur:
 
 - **Wallpapers** — izgaranin ilk kutusu "+" kartidir: bilgisayarinizdan gorsel
   yukler. Ardindan `wallpapers/` klasorundeki yerlesik gorseller, en sonda da
   yukledikleriniz listelenir (uzerlerine gelince kucuk bir silme dugmesi
   cikar). Birine tiklandiginda arka plan aninda degisir ve secim
   `chrome.storage.local` icinde `selectedWallpaper` olarak saklanir.
-- **Settings** — "Karisik Duvar Kagidi" anahtari. Acikken ana sayfa her
-  acildiginda rastgele bir gorsel gosterilir; havuza yerlesikler kadar
-  kendi yukledikleriniz de dahildir. Deger `shuffleWallpaper` anahtarinda
-  tutulur. Bolumun altinda depolama kullanimi ozeti yer alir.
+- **Settings** — alti anahtar, altinda da depolama kullanimi ozeti:
+
+| Anahtar | Ne yapar | Varsayilan |
+| --- | --- | --- |
+| Extension Enabled | Ana anahtar. Kapatilinca sayfa yeniden yuklenir ve eklenti hicbir seye dokunmaz. | Acik |
+| Comments | Video altindaki yorum bolumunu **gosterir**. | Kapali (yorumlar gizli) |
+| Description | Video aciklamasini ve acilan panellerini **gosterir**. | Kapali |
+| Shorts | Shorts raflarini, Shorts sonuclarini ve menudeki Shorts girisini **gosterir**. | Kapali |
+| Grayscale Thumbnails | Kucuk resimlerin rengini alir; uzerine gelince renk geri gelir. | Kapali |
+| Shuffle Wallpaper | Ana sayfa her acildiginda rastgele bir duvar kagidi; havuza kendi yukledikleriniz de dahildir (`shuffleWallpaper`). | Kapali |
+
+Comments / Description / Shorts anahtarlari "bunu goster" diye okunur; bu
+yuzden varsayilanlari `false` ve kapali halleri gizleyen haldir. Grayscale
+ters yonde calisir: sinif acikken eklenir.
+
+**Ana anahtar** iki sey yapar: `<html>` uzerindeki `ymin-on` sinifi kalkar
+(content.css'teki her kural bu sinifa bagli oldugu icin stil katmani tek
+hamlede devre disi kalir) ve ozellik siniflari da ana anahtara bagli oldugu
+icin yorumlar, aciklama, Shorts ve kucuk resim renkleri YouTube'un gonderdigi
+haliyle kalir. Anahtari ceviren sekme kendini yeniler (canli bir SPA'yi elle
+geri sarmak yerine temiz sayfadan acmak daha guvenli); ayni anda acik diger
+sekmeler yenilenmez, `storage.onChanged` uzerinden sessizce toparlanir.
+
+**Shorts yonlendirmesi bu anahtara baglidir:** Shorts kapaliyken (varsayilan)
+`/shorts/<id>` adresi `/watch?v=<id>` adresine cevrilir; anahtar aciksa
+yonlendirme yapilmaz.
 
 ### Yuklenen gorseller ve depolama
 
