@@ -23,8 +23,10 @@ Kutuya tiklandiginda YouTube'un mavi odak cercevesi ezilir ve yerine
 **kirmizi** bir cerceve + yumusak hale gelir. Sadece renk ve golge degistigi
 icin kutu ne buyur ne kayar.
 
-Sayfanin tamamina `wallpaper.png` serilir (`cover` + `fixed`, yani kaydirirken
-kaymaz). Gorsel `content.css` icinden degil, `content.js`'in
+Sayfanin tamamina secili duvar kagidi serilir (`cover` + `fixed`, yani
+kaydirirken kaymaz). Tek bir dosya degil, bir **katalog** vardir: `content.js`
+icindeki `WALLPAPERS` dizisi ile kullanicinin kendi yukledigi gorseller
+(bkz. "Ayarlar paneli"). Gorsel `content.css` icinden degil, `content.js`'in
 `--ymin-wallpaper` degiskenine yazdigi calisma zamani adresinden gelir:
 eklenti ici bir dosyanin yolu CSS'ten dogrudan cozulemez. Bos sayfada gorsel
 tam parlakligindadir; arama sonuclari ve izleme sayfasinda uzerine ince bir
@@ -69,7 +71,7 @@ sadece hesap arayuzu gorunmez olur.
 | `content.js` | SPA rota takibi, Shorts yonlendirmesi, placeholder temizligi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
 | `logo.png` | Arama modunda cubugun ustunde gosterilen logo. `web_accessible_resources` icinde tanimlidir. |
 | `settings-ui.js` | Sag ust kosedeki disli butonu ve ayarlar paneli (duvar kagidi izgarasi + karisik mod anahtari). |
-| `wallpapers/` | Duvar kagitlari (`wallpaper-1..9`). `manifest.json` icinde `web_accessible_resources: ["wallpapers/*"]` olarak tanimlidir; adresleri calisma aninda `chrome.runtime.getURL` ile alinir. |
+| `wallpapers/` | Yerlesik duvar kagitlari. Katalogda su an 11 tane var: `wallpaper-0.png`, `wallpaper-1..4.jpg`, `wallpaper-8..10.jpg`, `wallpaper-11.png` (duz siyah, 8x8 px), `wallpaper-12.jpg`, `wallpaper-14.jpg`. `manifest.json` icinde `web_accessible_resources: ["wallpapers/*"]` olarak tanimlidir; adresleri calisma aninda `chrome.runtime.getURL` ile alinir. |
 | `small-logo.png` | Ikonlarin kaynak gorseli (yalnizca uretim zamani; eklenti calisirken kullanilmaz). |
 | `icons/generate_icons.py` | `small-logo.png`'yi okuyup 16/48/128 px ikonlari uretir: `python3 icons/generate_icons.py` |
 
@@ -102,15 +104,22 @@ dosyanin yuksekliginin yalnizca %44'u dolu (ust/altta seffaf pay var), bu
 yuzden 150px degeri ekranda ~66px'lik bir logoya denk geliyor. Kirpilmis bir
 dosya koyarsaniz `max-height`'i ~70px'e cekip `margin-bottom`'u buyutun.
 
-**Arka plan gorselini degistirmek** icin `wallpapers/wallpaper-1.png`
-dosyasini degistirin (ayni ad korunursa baska hicbir yere dokunmak gerekmez).
-Yeni bir dosya eklerseniz `manifest.json` icindeki `web_accessible_resources`
-listesine de eklenmesi gerekir.
+**Varsayilan arka plani degistirmek** icin en pratik yol paneldeki izgaradan
+baska bir duvar kagidi secmektir; secim `chrome.storage.local` icinde
+`selectedWallpaper` olarak kalir. Kod tarafindaki varsayilan
+`WALLPAPERS[0]`, yani `wallpapers/wallpaper-0.png`: hem ilk kurulumda hem de
+secili gorsel bulunamadiginda buna dusulur (`entryFor`).
+
+Dosyayi degistirirken adi korursaniz baska hicbir yere dokunmak gerekmez.
+Yeni dosya eklemek icin de `manifest.json`'a dokunulmaz (`wallpapers/*`
+jokeri zaten tanimli); yalnizca `WALLPAPERS` dizisine bir satir eklenir.
+
 Yerlesim `content.css` 8. bolumdeki `background-size / position / attachment`
-degerlerinden ayarlanir. Mevcut degerler (`max(130%, 190vh)` + `center 15%`)
-bu gorsele ozeldir: ortasindaki yazi bandi, ekranin ortasindaki arama
-cubugunun arkasina denk gelmesin diye gorsel buyutulup asagi kaydirildi.
-Dikey yuzde ne kadar kucukse gorsel o kadar asagi kayar.
+degerlerinden gelir; varsayilan `cover` / `center`. Katalogdaki bir satir
+kendi `size` / `position` degerini verebilir. `wallpaper-0` bunu yapar
+(`max(130%, 190vh)` + `center 15%`): ortasindaki beyaz yazi bandi, ekranin
+ortasindaki arama cubugunun arkasina denk gelmesin diye gorsel buyutulup
+asagi kaydirildi. Dikey yuzde ne kadar kucukse gorsel o kadar asagi kayar.
 
 **Icerik sayfalarindaki karartmayi kaldirmak** icin 8. bolumdeki
 `html.ymin-wallpaper:not(.ymin-blocked)` kuralini silin. O zaman gorsel her
@@ -182,6 +191,11 @@ giremezdi.
 dokunmaya gerek yoktur (`wallpapers/*` jokeri zaten tanimli). Gorselin
 kompozisyonu ozel bir kirpma istiyorsa satira `size` ve `position`
 ekleyebilirsiniz; verilmezse `cover` / `center` kullanilir.
+
+Numaralarda bosluk olmasi normaldir (su an 5, 6, 7, 13 ve 15 yok): **dosya
+adi saklanan tercihin ta kendisi**. Silinen bir gorselin numarasini baskasina
+vermek, o gorseli secmis kullanicilari sessizce baska bir arka plana baglar.
+Bu yuzden silinen numaralar bos birakilir, yeni gorsel siradaki numarayi alir.
 
 ## Sorun giderme
 
