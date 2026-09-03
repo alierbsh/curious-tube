@@ -931,7 +931,13 @@
         let touched = false;
         for (const key of ALL_KEYS) {
           if (key === KEY_CUSTOM || !(key in changes)) continue;
-          prefs[key] = changes[key].newValue;
+          // A REMOVED key arrives here with newValue undefined. Copying that
+          // straight into prefs would leave the preference neither set nor
+          // defaulted: KEY_SELECTED would resolve to no wallpaper at all, and
+          // every boolean would read as false regardless of its default. Fall
+          // back to DEFAULT_PREFS, which is what a missing key means anyway.
+          const next = changes[key].newValue;
+          prefs[key] = next === undefined ? DEFAULT_PREFS[key] : next;
           touched = true;
         }
         if (KEY_CUSTOM in changes) {
