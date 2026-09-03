@@ -16,7 +16,7 @@ kendi listeniz oldugu icin bosaltilmaz, dock'tan tek tikla acilir.
 | Sol menu (guide) ve mini menu | Arama sonuclari listesi |
 | Ust bardaki avatar (yerine kendi hesap baglantimiz gelir) | Abonelikler (`/feed/subscriptions`) ve hesap merkezi (`/feed/you`) |
 | Ust bardaki logo, olustur ve bildirim dugmeleri | Video oynatici (`/watch`) |
-| Izleme sayfasinda "Siradaki" onerileri ve yorumlar | Video basligi ve aciklamasi |
+| Izleme sayfasinda "Siradaki" onerileri; yorumlar ve aciklama (ikisi de panelden geri acilabilir) | Video basligi |
 | Shorts (her yerde; `/shorts/<id>` -> `/watch?v=<id>`) | |
 | Arama gecmisi ve otomatik tamamlama onerileri (dropdown) | |
 | Reklamlar, promosyon balonlari, bitis ekrani kartlari | |
@@ -268,14 +268,24 @@ getirilir. Kota korumalari: gorsel basina 3 MB tavan, en fazla 12 gorsel ve
 `getBytesInUse` ile yapilan kontrolde 512 KB'lik emniyet payi. Sinir asilirsa
 kayit **hic yazilmaz** ve panelde anlasilir bir uyari gosterilir.
 
-Tercih iki yerde tutulur: dogrusu `chrome.storage.local`, yani sekmeler ve
+Tercihler iki yerde tutulur: dogrusu `chrome.storage.local`, yani sekmeler ve
 oturumlar arasinda ortaktir. Ayrica sayfanin `localStorage`'inda
 (`ymin:prefs`) senkron okunabilen bir kopyasi vardir; `chrome.storage`
 asenkron oldugu icin ilk boyamada duvar kagidinin bir an yanlis gorunmesini
-bu onbellek engeller. Onbellekte yalnizca iki tercih ve yuklenen gorsellerin
-**kimlikleri** durur (base64 verisi asla) — kimlikler orada olmasa karisik mod
-ilk cekilisi henuz storage cevaplamadan yapamaz, kendi gorselleriniz havuza
-giremezdi.
+bu onbellek engeller.
+
+Onbellekte yalnizca **kucuk degerler** durur: alti anahtar (ana anahtar,
+yorumlar, aciklama, Shorts, gri kucuk resimler, karisik mod), secili duvar
+kagidi, ogrenilen kanal ve avatar adresi, bir de yuklenen gorsellerin
+**kimlikleri**. Base64 verisi asla buraya yazilmaz; sayfanin localStorage
+kotasini yer ve YouTube'un kendi verisiyle ayni alani paylasirdi.
+
+Anahtarlarin da onbellekte olmasi sart: olmasalardi kapatilmis bir eklenti
+`document_start` aninda her seyi yine uygular, ancak `chrome.storage`
+cevaplayinca geri alirdi — yani kullanicinin kapattigi sayfa bir an icin
+gorunurdu. Gorsel kimlikleri de ayni nedenle burada: karisik mod ilk
+cekilisini storage cevaplamadan yapar, kimlikler olmasa kendi gorselleriniz
+o cekilise giremezdi.
 
 **Yeni duvar kagidi eklemek:** dosyayi `wallpapers/` klasorune atin ve
 `content.js` icindeki `WALLPAPERS` dizisine bir satir ekleyin. Manifest'e
