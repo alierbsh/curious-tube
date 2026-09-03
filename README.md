@@ -108,11 +108,11 @@ sadece hesap arayuzu gorunmez olur.
 
 | Dosya | Isi |
 | --- | --- |
-| `manifest.json` | MV3 tanimi; yalnizca `www.youtube.com` ve `m.youtube.com` icin izin ister. Tek ek izin `storage` (duvar kagidi tercihi icin). |
+| `manifest.json` | MV3 tanimi. `permissions` listesinde tek bir madde var: `storage` (tercihler ve yuklenen gorseller icin). Sayfaya erisim ayri bir izin degil, `content_scripts.matches` icindeki `*://www.youtube.com/*` ve `*://m.youtube.com/*` uzerinden gelir -- magaza panelinde "host permission" diye gorunen sey budur. |
 | `content.css` | Asil gizleme katmani. `document_start` ile enjekte edildigi icin sayfa hic titremez. |
-| `content.js` | SPA rota takibi, Shorts yonlendirmesi, placeholder temizligi ve sonradan yuklenen dugumlerin temizligi (`MutationObserver`). |
+| `content.js` | Cekirdek: SPA rota takibi (`currentPage`), Shorts yonlendirmesi, placeholder temizligi, sonradan yuklenen reklam/raf dugumlerinin temizligi (`MutationObserver` + `sweep`), duvar kagidi katalogu ve uygulanmasi, kullanicinin yukledigi gorseller ve kota yonetimi, ozellik anahtarlarinin `<html>` siniflarina yansitilmasi, hesap baglantisi (`learnAccount`), tercihlerin `chrome.storage.local` + senkron `localStorage` onbellegi, arama kutusu emniyeti (`ensureSearchVisible`). Ayarlar arayuzunun kullandigi API'yi `window.__curiousYouTube` uzerinden acar. |
 | `logo.png` | Arama modunda cubugun ustunde gosterilen logo. `web_accessible_resources` icinde tanimlidir. |
-| `settings-ui.js` | Sag ust kosedeki disli butonu ve ayarlar paneli (duvar kagidi izgarasi + karisik mod anahtari). |
+| `settings-ui.js` | Sag kenarin ortasindaki dock (Subscriptions kisayolu + disli) ve cekmece panel: duvar kagidi izgarasi, "+" karti ile gorsel yukleme (canvas uzerinde kucultup yeniden kodlama), alti ozellik anahtari, depolama ozeti, odak tuzagi ve Escape. Yalnizca yapi ve davranis; gorunum `content.css` 10. bolumde. |
 | `wallpapers/` | Yerlesik duvar kagitlari. Katalogda su an 11 tane var: `wallpaper-0.png`, `wallpaper-1..4.jpg`, `wallpaper-8..10.jpg`, `wallpaper-11.png` (duz siyah, 8x8 px), `wallpaper-12.jpg`, `wallpaper-14.jpg`. `manifest.json` icinde `web_accessible_resources: ["wallpapers/*"]` olarak tanimlidir; adresleri calisma aninda `chrome.runtime.getURL` ile alinir. |
 | `small-logo.png` | Ikonlarin kaynak gorseli (yalnizca uretim zamani; eklenti calisirken kullanilmaz). |
 | `icons/generate_icons.py` | `small-logo.png`'yi okuyup 16/48/128 px ikonlari uretir: `python3 icons/generate_icons.py` |
@@ -311,3 +311,22 @@ ve YouTube sekmesini bir kez tazeleyin.
   ilgili ozel elemanin adi (`ytd-*`) degismis demektir. DevTools ile yeni adi
   bulup `content.css` icindeki uygun bolume eklemek yeterlidir.
 - CSS'te `:has()` kullanilir; Chrome 105 ve uzeri gerekir.
+
+### Mobil (m.youtube.com) destegi kismidir
+
+Manifest hem `www` hem `m` icin eslesir, ama mobil YouTube tamamen farkli
+ozel elemanlar kullanir (`ytm-*`), masaustu ise `ytd-*`. Kodu okuyarak cikan
+durum:
+
+| Calisir | Calismaz |
+| --- | --- |
+| `/shorts/<id>` yonlendirmesi (saf JS, isaretlemeden bagimsiz) | Ust bar temizligi, arama cubugunun ortalanmasi, bos sayfa (hepsi `ytd-*` / `#page-manager` seciciilerine bagli) |
+| Tercihler, depolama ve senkron onbellek | Izleme sayfasindaki yorum/aciklama gizleme ve arama sonuclari temizligi (5. ve 6. bolum, `ytd-*`) |
+| Dock ve ayarlar paneli (kendi elemanlarimiz, `ytd-*` gerektirmez) | Ust bardaki kucuk logo (`ytd-masthead` / `#masthead` bulunamaz) |
+| 9. bolumdeki mobil kurallari: alt pivot bar, ana sayfa izgarasi, Shorts rafi, "siradaki" onerileri | Avatarin ogrenilmesi (`AVATAR_SELECTORS` masaustu elemanlari); hesap baglantisi yine de calisir, `/feed/you`'da kalir |
+| Duvar kagidi `<html>` uzerine serilir | ...ama mobilin kendi kapsayicilari seffaflastirilmadigi icin buyuk olcude ortulu kalir |
+
+Pratikte bu cok az kisiyi ilgilendirir: Android'deki Chrome uzanti
+calistirmaz, yani `m.youtube.com` ancak masaustunde elle acildiginda
+gorunur. Yine de dogru olan sunu yazmaktir: **mobil duzen icin tam destek
+yoktur.**
