@@ -1003,12 +1003,26 @@
     input.focus();
   }
 
+  /** Timer ids of the round currently queued, so the next one can cancel it. */
+  let settleTimers = [];
+
   /**
    * Polymer draws the masthead late, so the checks are repeated a few times
    * at widening intervals.
+   *
+   * Each round cancels the one before it. apply() runs on five signals
+   * (yt-navigate-start, yt-navigate-finish, yt-page-data-updated, popstate
+   * and the observer) and YouTube fires several of them per navigation, so
+   * without this a single click left a dozen overlapping rounds queued, every
+   * one of them re-running the same DOM queries over a page an earlier round
+   * had already settled. The intervals are untouched: they exist because the
+   * masthead arrives late, and the newest round is the one measuring the page
+   * the user is actually on. Everything in here is idempotent, so dropping
+   * the older rounds loses no work.
    */
   function settle() {
-    [300, 900, 1800].forEach((delay) =>
+    settleTimers.forEach(clearTimeout);
+    settleTimers = [300, 900, 1800].map((delay) =>
       setTimeout(() => {
         ensureSearchVisible();
         renderLogo();
