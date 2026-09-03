@@ -46,6 +46,28 @@ kendi SPA yonlendirmesiyle calisir (tam sayfa yenilemesi olmaz) ve klavye
 erisimi bozulmaz. Baglanti bulunamazsa yedek olarak kendi `<a href="/">`
 baglantimiz kurulur.
 
+### Sag ustteki hesap baglantisi
+
+Ust bardaki avatar gizlenir, ama yerine kendi baglantimiz (`#ymin-account`)
+sag ust koseye konur: yuvarlak avatar, tiklaninca **kendi kanaliniz**.
+
+Adres ve avatar tahmin edilmez, YouTube'un kendi DOM'undan **ogrenilir** ve
+`chrome.storage.local` icinde (`myChannelUrl`, `myAvatarUrl`) saklanir:
+
+- Avatar, ust bardaki `img`'den okunur. Polymer bunu gec cizdigi icin okuma
+  `settle()` tekrarlarina bindirilmistir; her mutation'da sorgu yapilmaz.
+- Kanal adresi, YouTube'un hesap basligindan
+  (`ytd-active-account-header-renderer`) alinir. O eleman DOM'da yoksa ve
+  sayfa `/feed/you` ise `findOwnChannelOnHub()` devreye girer: menu,
+  raf ve video kartlari gibi **baskasina ait** kapsamlarin disinda kalan
+  kanal baglantilarina bakar ve yalnizca **tek** bir aday varsa kabul eder.
+  Belirsizlik basarisizlik sayilir; kullaniciyi yanlis kanala gondermek,
+  baglantiyi oldugu yerde birakmaktan kotudur.
+- Ogrenilene kadar baglanti `/feed/you` adresine gider (`ACCOUNT_FALLBACK`),
+  yani hicbir zaman olu bir baglanti olmaz.
+- Ogrenildikten sonra kanalin **`/videos`** sekmesine gider: kanalin ana
+  sekmesi fragman ve one cikanlari gosterir, yuklemeleri degil.
+
 Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
 ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
 yoktur, kutunun icindeki stok "Ara" / "Search" yazisi da `content.js`
