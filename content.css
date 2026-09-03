@@ -429,7 +429,15 @@ html.ymin-on.ymin-hide-description ytm-expandable-video-description-body-rendere
   display: none !important;
 }
 
-/* End-screen cards, the pause ad and suggestion bubbles over the player */
+/* End-screen cards, the pause ad and suggestion bubbles over the player.
+   .ytp-autonav-endscreen-countdown-overlay is the "Up next in 5" card with the
+   thumbnail and the CANCEL / PLAY NOW buttons: a direct child of #movie_player
+   that none of the older selectors reached, so it was the one thing still
+   covering the video at the end. Only the overlay is listed; everything in the
+   card hangs off it, and the control bar is a sibling, so it stays clickable.
+   Hiding it is not enough on its own — content.js cancels the countdown too,
+   otherwise YouTube would just navigate away behind an invisible card. */
+html.ymin-on .ytp-autonav-endscreen-countdown-overlay,
 html.ymin-on .ytp-endscreen-content,
 html.ymin-on .html5-endscreen,
 html.ymin-on .ytp-videowall-still,

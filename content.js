@@ -1115,6 +1115,42 @@
     scope.querySelectorAll(selectors).forEach((node) => node.remove());
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Autoplay countdown                                                  */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Section 5 of content.css hides the "Up next" card that covers the video
+   * once it ends (.ytp-autonav-endscreen-countdown-overlay). Hiding it only
+   * makes the countdown invisible though: YouTube keeps counting and a few
+   * seconds later navigates to a video it picked, which is the whole thing
+   * this extension exists to avoid. So the card's own CANCEL button is
+   * pressed instead. A button inside a hidden overlay still answers a
+   * click, and cancelling leaves the finished video on screen with its
+   * controls untouched.
+   *
+   * YouTube's own autoplay switch is deliberately left alone: it belongs to
+   * the account, so flipping it here would follow the user to every other
+   * browser they sign in from.
+   */
+  const AUTONAV_CANCEL = ".ytp-autonav-endscreen-upnext-cancel-button";
+
+  let autonavTimers = [];
+
+  function cancelAutonav() {
+    if (!isEnabled()) return;
+    autonavTimers.forEach(clearTimeout);
+    // The card is drawn a beat after the video reports "ended" and the
+    // countdown runs for about five seconds, so a handful of short retries
+    // catches it whichever way round the two land.
+    autonavTimers = [0, 300, 1000, 2000].map((delay) =>
+      setTimeout(() => {
+        const button = document.querySelector(AUTONAV_CANCEL);
+        if (button) button.click();
+      }, delay)
+    );
+  }
+
   const observer = new MutationObserver((mutations) => {
     // Navigation does not create a new document, so re-check the URL here.
     if (location.href !== lastHref) apply();
@@ -1185,6 +1221,11 @@
   window.addEventListener("yt-navigate-finish", apply, true);
   window.addEventListener("yt-page-data-updated", apply, true);
   window.addEventListener("popstate", apply, true);
+
+  // "ended" does not bubble, but a capture listener still sees it on the way
+  // down to the <video> element -- which YouTube swaps out between
+  // navigations, so the listener goes on the document instead.
+  document.addEventListener("ended", cancelAutonav, true);
 
   // Entering or leaving fullscreen does not navigate, so it needs its own
   // hook. The webkit- prefixed event is still what some YouTube paths fire.
