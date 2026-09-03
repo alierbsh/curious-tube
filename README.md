@@ -5,19 +5,39 @@
 YouTube'u bir arama motoruna indirgeyen Chrome eklentisi (Manifest V3).
 Hesabinizdan cikis yapmadan, ana sayfa akisi / sol menu / oneriler / Shorts
 gibi dikkat dagitici her seyi gizler; geriye **arama cubugu, arama butonu ve
-arama sonuclari** kalir.
+arama sonuclari** kalir. Abonelikler bir istisnadir: algoritma degil sizin
+kendi listeniz oldugu icin bosaltilmaz, dock'tan tek tikla acilir.
 
 ## Ne gizlenir, ne kalir
 
 | Gizlenir | Kalir |
 | --- | --- |
-| Ana sayfa akisi, Abonelikler, Kesfet, Trendler | Arama cubugu + arama butonu |
+| Ana sayfa akisi, Kesfet, Trendler ve diger `/feed/*` sayfalari | Arama cubugu + arama butonu |
 | Sol menu (guide) ve mini menu | Arama sonuclari listesi |
-| Ust bardaki logo, olustur, bildirim, avatar | Video oynatici (`/watch`) |
+| Ust bardaki avatar (yerine kendi hesap baglantimiz gelir) | Abonelikler (`/feed/subscriptions`) ve hesap merkezi (`/feed/you`) |
+| Ust bardaki logo, olustur ve bildirim dugmeleri | Video oynatici (`/watch`) |
 | Izleme sayfasinda "Siradaki" onerileri ve yorumlar | Video basligi ve aciklamasi |
 | Shorts (her yerde; `/shorts/<id>` -> `/watch?v=<id>`) | |
 | Arama gecmisi ve otomatik tamamlama onerileri (dropdown) | |
 | Reklamlar, promosyon balonlari, bitis ekrani kartlari | |
+
+### Hangi rota bosaltilir
+
+Karar `content.js` icindeki `currentPage()` fonksiyonunda verilir:
+
+| Rota | Sonuc |
+| --- | --- |
+| `/`, `/feed/trending`, `/feed/explore`, `/feed/storefront`, `/gaming` | Bosaltilir (`BLOCKED_PATHS`) |
+| `/feed/` ile baslayan diger her sey (`/feed/history`, `/feed/playlists`, `/feed/channels`...) | Bosaltilir (onek kurali) |
+| `/feed/you`, `/feed/subscriptions` | **Bosaltilmaz** (`ALLOWED_FEEDS`) |
+| `/results` | Arama sonuclari duzeni |
+| `/watch` | Izleme duzeni |
+| `/shorts/<id>` | Shorts kapaliyken `/watch?v=<id>` adresine cevrilir |
+| Digerleri (kanal sayfalari, oynatma listeleri...) | Dokunulmaz |
+
+`ALLOWED_FEEDS` istisnasinin nedeni: bu iki sayfa algoritmanin degil
+kullanicinin kendi listesidir ve ikisi de dock'tan/hesap baglantisindan
+erisilir. Bosaltmak kendi dugmesini olu baglantiya cevirirdi.
 
 Kutuya tiklandiginda YouTube'un mavi odak cercevesi ezilir ve yerine
 **kirmizi** bir cerceve + yumusak hale gelir. Sadece renk ve golge degistigi
@@ -68,8 +88,8 @@ Adres ve avatar tahmin edilmez, YouTube'un kendi DOM'undan **ogrenilir** ve
 - Ogrenildikten sonra kanalin **`/videos`** sekmesine gider: kanalin ana
   sekmesi fragman ve one cikanlari gosterir, yuklemeleri degil.
 
-Bos sayfalarda (ana sayfa, abonelikler, kesfet) arama cubugu **ekranin tam
-ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
+Bosaltilan sayfalarda (ana sayfa, kesfet, trendler...) arama cubugu **ekranin
+tam ortasinda** durur ve ekranda ondan baska hicbir sey kalmaz: karsilama metni
 yoktur, kutunun icindeki stok "Ara" / "Search" yazisi da `content.js`
 tarafindan silinir. Bir arama yapildiginda ya da video acildiginda bar ust
 bardaki standart yerine geri doner, sonuc ve izleme duzeni bozulmaz.
@@ -170,7 +190,10 @@ duzenleyin; ornegin `#ff0033` daha yumusak bir YouTube kirmizisidir.
 kuralindaki `transform` satirini silin.
 
 **Baska bir sayfayi da bosaltmak** icin `content.js` icindeki
-`BLOCKED_PATHS` kumesine yolu ekleyin (ornek: `"/feed/history"`).
+`BLOCKED_PATHS` kumesine yolu ekleyin (ornek: `"/podcasts"`). `/feed/` ile
+baslayan sayfalar icin buna gerek yoktur; onlar zaten onek kuraliyla
+bosaltilir. Tersine, bir `/feed/` sayfasini **acik birakmak** icin
+`ALLOWED_FEEDS` kumesine ekleyin.
 
 ## Ayarlar paneli
 
