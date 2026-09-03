@@ -847,7 +847,16 @@
     }
   }
 
-  /** For the UI to persist a preference: into the cache and chrome.storage. */
+  /**
+   * For the UI to persist a preference: into the cache and chrome.storage.
+   *
+   * Returns a promise that settles once the write has actually landed. The
+   * parts that matter on screen — the cache and the feature classes — are
+   * already done before this returns, so almost every caller can ignore it.
+   * The one that cannot is the master switch: it reloads the page right
+   * after, and a reload can outrun an unfinished write (see settings-ui.js).
+   * The prefs snapshot this used to return was never read by anyone.
+   */
   function setPrefs(patch) {
     prefs = Object.assign({}, prefs, patch);
     writeCache();
@@ -855,11 +864,11 @@
     // re-apply the feature classes; toggles then take effect immediately.
     syncFeatureClasses();
     try {
-      chrome.storage.local.set(patch);
+      return Promise.resolve(chrome.storage.local.set(patch));
     } catch (_) {
       /* if the context is gone this only applies to the current tab */
+      return Promise.resolve();
     }
-    return Object.assign({}, prefs);
   }
 
   /**

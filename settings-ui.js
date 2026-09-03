@@ -369,6 +369,10 @@
     return key === api.KEY_ENABLED ? current[key] !== false : Boolean(current[key]);
   }
 
+  function reloadPage() {
+    window.location.reload();
+  }
+
   function settingRow(spec) {
     const row = el("div", "ymin-row" + (spec.master ? " ymin-row-master" : ""));
     row.dataset.key = spec.key;
@@ -384,12 +388,20 @@
 
     toggle.addEventListener("click", () => {
       const next = !valueOf(spec.key);
-      api.setPrefs({ [spec.key]: next });
+      const saved = api.setPrefs({ [spec.key]: next });
 
       if (spec.master) {
         // YouTube is a large SPA; unwinding a live page by hand is far more
         // fragile than letting it load once from a clean slate.
-        window.location.reload();
+        //
+        // The reload waits for the write to land. chrome.storage.local.set is
+        // asynchronous, and this is the one place where the page is torn down
+        // in the very next breath. The synchronous localStorage cache would
+        // carry the new state through the reload on its own, but reconcile()
+        // then reads the OLD value back out of chrome.storage and the switch
+        // silently flips itself back. Reload either way: a failed write must
+        // not leave the panel stuck.
+        saved.then(reloadPage, reloadPage);
         return;
       }
 
