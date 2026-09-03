@@ -207,6 +207,9 @@
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
     panel.setAttribute("aria-label", "CuriousTube settings");
+    // Focus lands here when the drawer opens, so a screen reader announces
+    // the dialog before its contents. -1 keeps it out of the Tab order.
+    panel.tabIndex = -1;
 
     /* --- Header --- */
     const header = el("header", "ymin-panel-header");
@@ -560,6 +563,10 @@
     render();
     refreshUsage();
     document.addEventListener("keydown", onKeydown, true);
+    // Without this the keyboard stays on the page behind the drawer, so the
+    // first Tab walks into YouTube instead of into the panel that just
+    // claimed to be modal.
+    panel.focus();
   }
 
   function closePanel() {
@@ -576,6 +583,54 @@
     if (event.key === "Escape") {
       event.stopPropagation();
       closePanel();
+      return;
+    }
+    if (event.key === "Tab" && open) trapTab(event);
+  }
+
+  /**
+   * What Tab is allowed to reach inside the drawer. Queried fresh every time:
+   * the wallpaper grid is rebuilt whenever an image is added or removed, and
+   * the inactive tab's pane is display:none, so a list captured when the
+   * panel opened would hand focus to elements that are no longer on screen.
+   */
+  const FOCUSABLE =
+    'button:not([disabled]), a[href], input:not([disabled]),' +
+    ' [tabindex]:not([tabindex="-1"])';
+
+  function focusables() {
+    return Array.prototype.filter.call(
+      panel.querySelectorAll(FOCUSABLE),
+      (node) => node.offsetParent !== null
+    );
+  }
+
+  /**
+   * Keeps Tab inside the drawer. The panel says aria-modal="true", and that
+   * promise is only real if the keyboard cannot walk out of it; Escape was
+   * the sole way back before this. Focus that sits outside the panel (the
+   * page still held it, or the panel itself is focused) is pulled back to
+   * the near edge rather than left where it was.
+   */
+  function trapTab(event) {
+    const items = focusables();
+    if (!items.length) return;
+
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    const inside = panel.contains(active) && active !== panel;
+
+    if (event.shiftKey) {
+      if (!inside || active === first) {
+        event.preventDefault();
+        last.focus();
+      }
+      return;
+    }
+    if (!inside || active === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
