@@ -472,15 +472,12 @@
     return btn;
   }
 
-  /**
-   * Rebuilds the grid: built-ins, the user's own uploads, then the "+" card.
-   * The card is appended before the uploads are read, so the async branch
-   * inserts them ahead of it and "+" stays the last cell either way.
-   */
+  /** Rebuilds the grid: "+" card, built-ins, then the user's own uploads. */
   function renderGrid() {
     if (!built) return Promise.resolve();
     const grid = panel.querySelector('[data-role="grid"]');
     grid.textContent = "";
+    grid.appendChild(addTile());
 
     api.WALLPAPERS.forEach((entry) => {
       let src = "";
@@ -492,18 +489,14 @@
       grid.appendChild(tile(entry.file, src, entry.label, false));
     });
 
-    const addCard = addTile();
-    grid.appendChild(addCard);
-
     const index = api.getCustomIndex();
     if (!index.length) return Promise.resolve();
 
     return api.getCustomData(index.map((c) => c.id)).then((data) => {
       index.forEach((meta, i) => {
         const ref = api.customRefOf(meta.id);
-        grid.insertBefore(
-          tile(ref, data[meta.id] || "", "Your wallpaper " + (i + 1), true),
-          addCard
+        grid.appendChild(
+          tile(ref, data[meta.id] || "", "Your wallpaper " + (i + 1), true)
         );
       });
       render();

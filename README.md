@@ -138,11 +138,11 @@ satirini silin.
 
 Bos sayfada sag ust kosede bir disli butonu belirir; panel iki bolumden olusur:
 
-- **Wallpapers** — once `wallpapers/` klasorundeki yerlesik gorseller,
-  ardindan kendi yukledikleriniz listelenir (uzerlerine gelince kucuk bir
-  silme dugmesi cikar). Izgaranin en sonundaki "+" karti bilgisayarinizdan
-  yeni bir gorsel ekler. Birine tiklandiginda arka plan aninda degisir ve
-  secim `chrome.storage.local` icinde `selectedWallpaper` olarak saklanir.
+- **Wallpapers** — izgaranin ilk kutusu "+" kartidir: bilgisayarinizdan gorsel
+  yukler. Ardindan `wallpapers/` klasorundeki yerlesik gorseller, en sonda da
+  yukledikleriniz listelenir (uzerlerine gelince kucuk bir silme dugmesi
+  cikar). Birine tiklandiginda arka plan aninda degisir ve secim
+  `chrome.storage.local` icinde `selectedWallpaper` olarak saklanir.
 - **Settings** — "Karisik Duvar Kagidi" anahtari. Acikken ana sayfa her
   acildiginda rastgele bir gorsel gosterilir; havuza yerlesikler kadar
   kendi yukledikleriniz de dahildir. Deger `shuffleWallpaper` anahtarinda
