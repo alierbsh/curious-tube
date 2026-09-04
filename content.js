@@ -376,6 +376,60 @@
     root.classList.toggle("ymin-fullscreen", isFullscreen());
   }
 
+  let flexyObserver = null;
+  let flexyNode = null;
+
+  /**
+   * Keeps YouTube's half of isFullscreen() live. Sampling that attribute only
+   * when something else happens is what strands the class: leaving fullscreen
+   * does not navigate, so nothing re-runs, and the global observer watches
+   * childList and never sees an attribute move.
+   *
+   * Polymer builds ytd-watch-flexy late and swaps it between watch pages, so
+   * the binding follows whatever node is current rather than assuming the one
+   * that existed at startup is still on the page.
+   */
+  function watchFullscreenAttr() {
+    const flexy = document.querySelector("ytd-watch-flexy");
+    if (flexy === flexyNode) return;
+
+    flexyNode = flexy;
+    if (flexyObserver) flexyObserver.disconnect();
+    if (!flexy) return;
+
+    if (!flexyObserver) flexyObserver = new MutationObserver(syncFullscreen);
+    flexyObserver.observe(flexy, {
+      attributes: true,
+      attributeFilter: ["fullscreen"],
+    });
+  }
+
+  /** Timer ids of the round currently queued, so the next one can cancel it. */
+  let fullscreenTimers = [];
+  let fullscreenFrame = 0;
+
+  /**
+   * Leaving fullscreen is not a single moment. The Fullscreen API has already
+   * let go by the time the event fires while YouTube can still be holding its
+   * attribute, and isFullscreen() answers yes as long as either signal does --
+   * so one check on the event reads the half-exited state and the class never
+   * comes off. The re-checks give the slower signal time to land.
+   *
+   * Each event cancels the round before it, the way settle() does: several
+   * events can arrive for one exit, and syncFullscreen() is idempotent, so
+   * dropping the older round loses nothing.
+   */
+  function resyncFullscreen() {
+    fullscreenTimers.forEach(clearTimeout);
+    cancelAnimationFrame(fullscreenFrame);
+
+    syncFullscreen();
+    fullscreenFrame = requestAnimationFrame(syncFullscreen);
+    fullscreenTimers = [100, 500].map((delay) =>
+      setTimeout(syncFullscreen, delay)
+    );
+  }
+
   /* ------------------------------------------------------------------ */
   /* Routing                                                             */
   /* ------------------------------------------------------------------ */
@@ -1047,6 +1101,7 @@
         // a querySelector on every mutation batch.
         learnAccount();
         renderAccount();
+        watchFullscreenAttr();
         syncFullscreen();
         stripPlaceholder();
         if (root.classList.contains("ymin-blocked")) focusSearch();
@@ -1095,6 +1150,7 @@
     renderLogo();
     renderNavLogo();
     renderAccount();
+    watchFullscreenAttr();
     syncFullscreen();
     stripPlaceholder();
     settle();
@@ -1154,6 +1210,11 @@
   const observer = new MutationObserver((mutations) => {
     // Navigation does not create a new document, so re-check the URL here.
     if (location.href !== lastHref) apply();
+
+    // Polymer can also swap ytd-watch-flexy without navigating, which would
+    // strand the attribute observer on a node nobody sees any more. This is a
+    // property read rather than a DOM query, so it stays off the hot path.
+    if (flexyNode && !flexyNode.isConnected) watchFullscreenAttr();
 
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
@@ -1230,6 +1291,6 @@
   // Entering or leaving fullscreen does not navigate, so it needs its own
   // hook. The webkit- prefixed event is still what some YouTube paths fire.
   ["fullscreenchange", "webkitfullscreenchange"].forEach((evt) => {
-    document.addEventListener(evt, syncFullscreen, true);
+    document.addEventListener(evt, resyncFullscreen, true);
   });
 })();
