@@ -12,6 +12,11 @@ in; only the account UI disappears.
 <img width="640" height="400" alt="1" src="https://github.com/user-attachments/assets/999ba9eb-293e-4fbb-869b-334d974a0797" />
 
 
+<img width="378" height="427" alt="2026-09-04_15-10-12" src="https://github.com/user-attachments/assets/75a131bd-50cf-4d8b-89c3-19341bb4d0e4" />
+
+
+<img width="369" height="600" alt="image" src="https://github.com/user-attachments/assets/1cefad8c-28d0-42c4-b243-e98b02d7c9e6" />
+
 ## Install
 
 Not on the Web Store yet: open `chrome://extensions`, turn on **Developer
