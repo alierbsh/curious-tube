@@ -8,7 +8,9 @@ the account menu go; the search box, the results and the player stay.
 Subscriptions are the exception — that list is yours, not the algorithm's — so
 `/feed/subscriptions` and the account hub stay one click away. You stay signed
 in; only the account UI disappears.
+
 <img width="640" height="400" alt="1" src="https://github.com/user-attachments/assets/999ba9eb-293e-4fbb-869b-334d974a0797" />
+
 
 ## Install
 
