@@ -358,6 +358,9 @@
   /* Fullscreen                                                          */
   /* ------------------------------------------------------------------ */
 
+  /** Set once the Fullscreen API has been engaged on this page. */
+  let apiFullscreenSeen = false;
+
   /**
    * Marks <html> while a video is playing fullscreen, so our own floating
    * controls can get out of the way. In fullscreen the video IS the page;
@@ -366,12 +369,33 @@
    * Two signals, because one is not enough: the Fullscreen API is
    * authoritative, but YouTube also has its own fullscreen layout that it
    * marks on ytd-watch-flexy, and the two do not always move together.
+   *
+   * They are not equals, though, and reading them as equals is what used to
+   * stick: YouTube does not always drop its attribute on the way out, and an
+   * OR over a stale attribute answers yes forever -- no later re-check can
+   * talk it down, because nothing says who wins when the two disagree.
+   *
+   * So the browser outranks the interface. Once the API has been engaged we
+   * trust nothing else: its "no" is final and the attribute is not consulted.
+   * The attribute only speaks while the API never has, which is the case it
+   * was added for -- YouTube laying out fullscreen on its own -- and there it
+   * cannot contradict anything.
    */
   function isFullscreen() {
-    if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      apiFullscreenSeen = true;
+      return true;
+    }
+    if (apiFullscreenSeen) return false;
     return Boolean(document.querySelector("ytd-watch-flexy[fullscreen]"));
   }
 
+  /**
+   * The one place the class is decided, so a stale reading has nowhere to
+   * hide. Section 11 of content.css promises the dock comes back on the way
+   * out, and the dock is the only route to the settings, so being wrong here
+   * locks someone out of their own controls.
+   */
   function syncFullscreen() {
     root.classList.toggle("ymin-fullscreen", isFullscreen());
   }
@@ -1215,6 +1239,13 @@
     // strand the attribute observer on a node nobody sees any more. This is a
     // property read rather than a DOM query, so it stays off the hot path.
     if (flexyNode && !flexyNode.isConnected) watchFullscreenAttr();
+
+    // Last line of defence for the dock. Every exit already routes through
+    // syncFullscreen(), but an exit that somehow fires nothing would hide the
+    // dock for good, so while the class is on the page keeps asking. The
+    // guard is a class check, and once the API has been engaged the answer
+    // costs two property reads.
+    if (root.classList.contains("ymin-fullscreen")) syncFullscreen();
 
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
