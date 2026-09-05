@@ -19,9 +19,11 @@ in; only the account UI disappears.
 
 ## Install
 
-Not on the Web Store yet: open `chrome://extensions`, turn on **Developer
-mode**, click **Load unpacked** and pick this folder, then reload any open
-YouTube tab. Chrome 105 or newer.
+[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/curioustube/ijmemoebckcpddgmlanbljlpjmjfgjpl).
+Chrome 105 or newer.
+
+From source instead: open `chrome://extensions`, turn on **Developer mode**,
+click **Load unpacked** and pick this folder, then reload any open YouTube tab.
 
 ## Using it
 
